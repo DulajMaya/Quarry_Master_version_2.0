@@ -1,0 +1,1216 @@
+// services/daily-blast-operation.service.js
+const { 
+    DailyBlastOperation, 
+    DailyBlastExplosive,
+    ExplosiveType,
+    StoreInventory,
+    InventoryMovement,
+    sequelize
+} = require('../models');
+
+class DailyBlastOperationService {
+    async requestExplosives(daily_blast_id, explosiveRequests, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            console.log('Starting explosive request process:', {
+                daily_blast_id,
+                explosiveCount: explosiveRequests.length
+            });
+
+            // Get operation and validate status
+            const operation = await DailyBlastOperation.findOne({
+                where: { daily_blast_id }
+            });
+
+            if (!operation.canRequestExplosives()) {
+                throw new Error(`Invalid operation status: ${operation.status}`);
+            }
+
+            // Validate and create explosive allocations
+            const allocations = await Promise.all(explosiveRequests.map(async request => {
+                // Validate available inventory
+                const inventory = await StoreInventory.findOne({
+                    where: {
+                        StoreID: request.store_id,
+                        ExplosiveTypeID: request.explosive_type_id
+                    }
+                });
+
+                if (!inventory || inventory.CurrentQuantity < request.quantity) {
+                    throw new Error(`Insufficient inventory for explosive type ${request.explosive_type_id}`);
+                }
+
+                // Create allocation
+                return DailyBlastExplosive.create({
+                    daily_blast_id,
+                    explosive_type_id: request.explosive_type_id,
+                    quantity_issued: request.quantity,
+                    created_by: userId
+                }, { transaction });
+            }));
+
+            // Create inventory movements
+            await Promise.all(allocations.map(allocation =>
+                InventoryMovement.create({
+                    InventoryID: allocation.explosive_type_id,
+                    MovementType: 'OUT',
+                    Quantity: allocation.quantity_issued,
+                    ReferenceType: 'DailyBlastOperation',
+                    ReferenceID: daily_blast_id,
+                    CreatedBy: userId
+                }, { transaction })
+            ));
+
+            // Update operation status
+            await operation.update({
+                status: 'EXPLOSIVES_ISSUED'
+            }, { transaction });
+
+            await transaction.commit();
+            
+            console.log('Successfully allocated explosives:', {
+                daily_blast_id,
+                allocationCount: allocations.length
+            });
+
+            return allocations;
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in requestExplosives:', error);
+            throw error;
+        }
+    }
+
+    async returnExplosives(daily_blast_id, returns, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            const allocations = await DailyBlastExplosive.findAll({
+                where: { daily_blast_id }
+            });
+
+            await Promise.all(returns.map(async return_data => {
+                const allocation = allocations.find(
+                    a => a.explosive_type_id === return_data.explosive_type_id
+                );
+
+                if (!allocation) {
+                    throw new Error(`No allocation found for explosive type ${return_data.explosive_type_id}`);
+                }
+
+                if (!allocation.canBeReturned()) {
+                    throw new Error(`Cannot return explosives - all quantities accounted for`);
+                }
+
+                const availableForReturn = allocation.getAvailableQuantity();
+                if (return_data.quantity > availableForReturn) {
+                    throw new Error(`Return quantity exceeds available amount`);
+                }
+
+                // Update allocation
+                await allocation.update({
+                    quantity_returned: allocation.quantity_returned + return_data.quantity,
+                    quantity_wasted: allocation.quantity_wasted + (return_data.wasted_quantity || 0),
+                    quantity_damaged: allocation.quantity_damaged + (return_data.damaged_quantity || 0),
+                    remarks: return_data.remarks
+                }, { transaction });
+
+                // Create return movement
+                await InventoryMovement.create({
+                    InventoryID: allocation.explosive_type_id,
+                    MovementType: 'IN',
+                    Quantity: return_data.quantity,
+                    ReferenceType: 'ExplosiveReturn',
+                    ReferenceID: daily_blast_id,
+                    CreatedBy: userId,
+                    remarks: return_data.remarks
+                }, { transaction });
+            }));
+
+            await transaction.commit();
+            
+            return await DailyBlastExplosive.findAll({
+                where: { daily_blast_id }
+            });
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in returnExplosives:', error);
+            throw error;
+        }
+    }
+
+    // ... continue with more methods?
+
+
+
+    async validateExplosiveUsage(daily_blast_id) {
+        try {
+            // Get all blast events and their explosive usage
+            const [operation, totalUsage] = await Promise.all([
+                DailyBlastOperation.findByPk(daily_blast_id, {
+                    include: [{
+                        model: DailyBlastExplosive,
+                        as: 'explosiveAllocations',
+                        include: ['explosiveType']
+                    }]
+                }),
+                this.calculateTotalExplosiveUsage(daily_blast_id)
+            ]);
+
+            const validations = operation.explosiveAllocations.map(allocation => {
+                const used = totalUsage[allocation.explosive_type_id] || 0;
+                const returned = parseFloat(allocation.quantity_returned || 0);
+                const wasted = parseFloat(allocation.quantity_wasted || 0);
+                const damaged = parseFloat(allocation.quantity_damaged || 0);
+                const total = used + returned + wasted + damaged;
+
+                return {
+                    explosive_type: allocation.explosiveType.TypeName,
+                    explosive_type_id: allocation.explosive_type_id,
+                    issued: parseFloat(allocation.quantity_issued),
+                    used,
+                    returned,
+                    wasted,
+                    damaged,
+                    total,
+                    balanced: Math.abs(total - allocation.quantity_issued) < 0.01,
+                    difference: allocation.quantity_issued - total
+                };
+            });
+
+            return {
+                isValid: validations.every(v => v.balanced),
+                details: validations
+            };
+        } catch (error) {
+            console.error('Error in validateExplosiveUsage:', error);
+            throw error;
+        }
+    }
+
+    async calculateTotalExplosiveUsage(daily_blast_id) {
+        try {
+            const blastEvents = await BlastEvent.findAll({
+                where: { daily_blast_id },
+                include: [{
+                    model: BlastHoleExplosive,
+                    as: 'holeExplosives',
+                    attributes: ['explosive_type_id', 'quantity'],
+                    where: { status: 'CHARGED' }
+                }]
+            });
+
+            return blastEvents.reduce((totals, event) => {
+                event.holeExplosives.forEach(explosive => {
+                    totals[explosive.explosive_type_id] = 
+                        (totals[explosive.explosive_type_id] || 0) + parseFloat(explosive.quantity);
+                });
+                return totals;
+            }, {});
+        } catch (error) {
+            console.error('Error in calculateTotalExplosiveUsage:', error);
+            throw error;
+        }
+    }
+
+    async completeOperation(daily_blast_id, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            const operation = await DailyBlastOperation.findByPk(daily_blast_id);
+            if (!operation) {
+                throw new Error('Daily blast operation not found');
+            }
+
+            // Validate all explosives are accounted for
+            const validation = await this.validateExplosiveUsage(daily_blast_id);
+            if (!validation.isValid) {
+                throw new Error('Cannot complete operation - explosive quantities are not reconciled');
+            }
+
+            // Update operation status
+            await operation.update({
+                status: 'COMPLETED',
+                explosives_reconciled: true
+            }, { transaction });
+
+            // Create final inventory adjustments if needed
+            await this.handleFinalAdjustments(daily_blast_id, userId, transaction);
+
+            await transaction.commit();
+            return operation;
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in completeOperation:', error);
+            throw error;
+        }
+    }
+
+    async handleFinalAdjustments(daily_blast_id, userId, transaction) {
+        const validation = await this.validateExplosiveUsage(daily_blast_id);
+        
+        for (const detail of validation.details) {
+            if (detail.difference > 0) {
+                // Create adjustment for any unaccounted quantities
+                await InventoryMovement.create({
+                    InventoryID: detail.explosive_type_id,
+                    MovementType: 'OUT',
+                    Quantity: detail.difference,
+                    ReferenceType: 'Adjustment',
+                    ReferenceID: daily_blast_id,
+                    CreatedBy: userId,
+                    remarks: 'Final reconciliation adjustment'
+                }, { transaction });
+            }
+        }
+    }
+
+    async getDailySummary(daily_blast_id) {
+        try {
+            const operation = await DailyBlastOperation.findByPk(daily_blast_id, {
+                include: [
+                    {
+                        model: DailyBlastExplosive,
+                        as: 'explosiveAllocations',
+                        include: ['explosiveType']
+                    },
+                    {
+                        model: BlastEvent,
+                        as: 'blastEvents',
+                        include: ['holes']
+                    }
+                ]
+            });
+
+            if (!operation) {
+                throw new Error('Daily blast operation not found');
+            }
+
+            const explosiveUsage = await this.calculateTotalExplosiveUsage(daily_blast_id);
+
+            return {
+                operation_details: {
+                    date: operation.operation_date,
+                    status: operation.status,
+                    planned_blasts: operation.number_of_planned_blasts,
+                    completed_blasts: operation.blastEvents.filter(e => e.status === 'COMPLETED').length
+                },
+                explosives: operation.explosiveAllocations.map(allocation => ({
+                    type: allocation.explosiveType.TypeName,
+                    issued: parseFloat(allocation.quantity_issued),
+                    used: explosiveUsage[allocation.explosive_type_id] || 0,
+                    returned: parseFloat(allocation.quantity_returned || 0),
+                    wasted: parseFloat(allocation.quantity_wasted || 0),
+                    damaged: parseFloat(allocation.quantity_damaged || 0)
+                })),
+                blasts: operation.blastEvents.map(event => ({
+                    sequence: event.blast_sequence_number,
+                    status: event.status,
+                    holes_count: event.holes.length,
+                    completed_at: event.blast_time
+                }))
+            };
+        } catch (error) {
+            console.error('Error in getDailySummary:', error);
+            throw error;
+        }
+
+    }
+
+
+
+    // Add to DailyBlastOperationService
+
+    async createDailyOperation(data) {
+        const transaction = await sequelize.transaction();
+        try {
+            console.log('Creating daily blast operation:', {
+                miningSiteId: data.miningSiteId,
+                date: data.operation_date
+            });
+
+            // Check for existing operation on same date
+            const existingOperation = await DailyBlastOperation.findOne({
+                where: {
+                    miningSiteId: data.miningSiteId,
+                    operation_date: data.operation_date,
+                    is_active: true
+                }
+            });
+
+            if (existingOperation) {
+                throw new Error('Daily blast operation already exists for this date');
+            }
+
+            // Validate against license parameters
+            await this.validateLicenseParameters(data);
+
+            const operation = await DailyBlastOperation.create({
+                ...data,
+                created_by: data.userId,
+                status: 'PLANNED'
+            }, { transaction });
+
+            await transaction.commit();
+            return operation;
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in createDailyOperation:', error);
+            throw error;
+        }
+    }
+
+    async getDailyOperations(miningSiteId, query = {}) {
+        try {
+            const {
+                page = 1,
+                limit = 10,
+                status,
+                startDate,
+                endDate,
+                sort = 'operation_date'
+            } = query;
+
+            const where = { 
+                miningSiteId,
+                is_active: true 
+            };
+
+            if (status) {
+                where.status = status;
+            }
+
+            if (startDate && endDate) {
+                where.operation_date = {
+                    [Op.between]: [startDate, endDate]
+                };
+            }
+
+            const operations = await DailyBlastOperation.findAndCountAll({
+                where,
+                include: [
+                    {
+                        model: DailyBlastExplosive,
+                        as: 'explosiveAllocations',
+                        include: ['explosiveType']
+                    },
+                    {
+                        model: BlastEvent,
+                        as: 'blastEvents',
+                        attributes: ['blast_id', 'status']
+                    }
+                ],
+                order: [[sort, 'DESC']],
+                limit: parseInt(limit),
+                offset: (parseInt(page) - 1) * parseInt(limit)
+            });
+
+            return {
+                total: operations.count,
+                pages: Math.ceil(operations.count / limit),
+                currentPage: parseInt(page),
+                operations: operations.rows.map(op => ({
+                    ...op.toJSON(),
+                    explosives_count: op.explosiveAllocations.length,
+                    blasts_count: op.blastEvents.length,
+                    completed_blasts: op.blastEvents.filter(b => b.status === 'COMPLETED').length
+                }))
+            };
+        } catch (error) {
+            console.error('Error in getDailyOperations:', error);
+            throw error;
+        }
+    }
+
+    async updateDailyOperation(daily_blast_id, data, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            const operation = await DailyBlastOperation.findOne({
+                where: { 
+                    daily_blast_id,
+                    is_active: true 
+                }
+            });
+
+            if (!operation) {
+                throw new Error('Daily blast operation not found');
+            }
+
+            // Validate status transition if status is being updated
+            if (data.status && !this.isValidStatusTransition(operation.status, data.status)) {
+                throw new Error(`Invalid status transition from ${operation.status} to ${data.status}`);
+            }
+
+            // Validate against license if relevant parameters are being updated
+            if (data.number_of_planned_blasts) {
+                await this.validateLicenseParameters({
+                    ...operation.toJSON(),
+                    ...data
+                });
+            }
+
+            await operation.update({
+                ...data,
+                updated_by: userId
+            }, { transaction });
+
+            await transaction.commit();
+            return operation;
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in updateDailyOperation:', error);
+            throw error;
+        }
+    }
+
+    async validateLicenseParameters(data) {
+        try {
+            const site = await MiningSite.findOne({
+                where: { site_id: data.miningSiteId },
+                include: [{
+                    model: License,
+                    as: 'license',
+                    where: { status: 'active' }
+                }]
+            });
+
+            if (!site || !site.license) {
+                throw new Error('No active license found for mining site');
+            }
+
+            if (data.number_of_planned_blasts > site.license.max_blasts_per_day) {
+                throw new Error(`Number of planned blasts (${data.number_of_planned_blasts}) exceeds license limit (${site.license.max_blasts_per_day})`);
+            }
+
+            // Add any additional license parameter validations
+
+            return true;
+        } catch (error) {
+            console.error('Error in validateLicenseParameters:', error);
+            throw error;
+        }
+    }
+
+    isValidStatusTransition(currentStatus, newStatus) {
+        const validTransitions = {
+            'PLANNED': ['EXPLOSIVES_REQUESTED', 'CANCELLED'],
+            'EXPLOSIVES_REQUESTED': ['EXPLOSIVES_ISSUED', 'CANCELLED'],
+            'EXPLOSIVES_ISSUED': ['ONGOING', 'CANCELLED'],
+            'ONGOING': ['COMPLETED'],
+            'COMPLETED': ['CLOSED'],
+            'CANCELLED': []
+        };
+
+        return validTransitions[currentStatus]?.includes(newStatus);
+    }
+
+
+
+
+    
+}
+
+module.exports = new DailyBlastOperationService();
+
+
+
+// services/blast-event.service.js
+const { 
+    BlastEvent,
+    BlastEventExplosive,
+    DailyBlastOperation,
+    DailyBlastExplosive,
+    DrillingSite,
+    BlastHole,
+    sequelize
+} = require('../models');
+
+class BlastEventService {
+    async createBlastEvent(data) {
+        const transaction = await sequelize.transaction();
+        try {
+            console.log('Starting blast event creation:', {
+                dailyBlastId: data.daily_blast_id,
+                drillingSiteId: data.drilling_site_id
+            });
+
+            // Validate daily operation status
+            const dailyOperation = await DailyBlastOperation.findOne({
+                where: { 
+                    daily_blast_id: data.daily_blast_id,
+                    status: 'EXPLOSIVES_ISSUED'
+                }
+            });
+
+            if (!dailyOperation) {
+                throw new Error('Daily operation not found or explosives not issued');
+            }
+
+            // Get sequence number
+            const sequenceNumber = await this.getNextSequenceNumber(data.daily_blast_id);
+
+            // Create blast event
+            const blastEvent = await BlastEvent.create({
+                ...data,
+                blast_sequence_number: sequenceNumber,
+                created_by: data.userId
+            }, { transaction });
+
+            // Create explosive records if provided
+            if (data.explosives) {
+                await this.createExplosivePlan(
+                    blastEvent.blast_id,
+                    data.explosives,
+                    data.daily_blast_id,
+                    transaction
+                );
+            }
+
+            await transaction.commit();
+            
+            console.log('Successfully created blast event:', {
+                blastId: blastEvent.blast_id,
+                sequenceNumber
+            });
+
+            return blastEvent;
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in createBlastEvent:', error);
+            throw error;
+        }
+    }
+
+    async createExplosivePlan(blast_id, explosives, daily_blast_id, transaction) {
+        // Validate against daily allocation
+        for (const explosive of explosives) {
+            const dailyAllocation = await DailyBlastExplosive.findOne({
+                where: {
+                    daily_blast_id,
+                    explosive_type_id: explosive.explosive_type_id
+                }
+            });
+
+            if (!dailyAllocation) {
+                throw new Error(`Explosive type ${explosive.explosive_type_id} not allocated for today`);
+            }
+
+            const availableQuantity = dailyAllocation.getAvailableQuantity();
+            if (explosive.quantity_planned > availableQuantity) {
+                throw new Error(
+                    `Planned quantity ${explosive.quantity_planned} exceeds available quantity ${availableQuantity} for type ${explosive.explosive_type_id}`
+                );
+            }
+
+            await BlastEventExplosive.create({
+                blast_id,
+                explosive_type_id: explosive.explosive_type_id,
+                quantity_planned: explosive.quantity_planned,
+                remarks: explosive.remarks
+            }, { transaction });
+        }
+    }
+
+    async getNextSequenceNumber(daily_blast_id) {
+        const lastBlast = await BlastEvent.findOne({
+            where: { daily_blast_id },
+            order: [['blast_sequence_number', 'DESC']]
+        });
+        return (lastBlast?.blast_sequence_number || 0) + 1;
+    }
+
+    async startCharging(blast_id, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            const blastEvent = await BlastEvent.findOne({
+                where: { blast_id },
+                include: ['explosives']
+            });
+
+            if (!blastEvent) {
+                throw new Error('Blast event not found');
+            }
+
+            if (blastEvent.status !== 'READY') {
+                throw new Error(`Invalid status for charging: ${blastEvent.status}`);
+            }
+
+            // Validate all explosives are planned
+            if (!blastEvent.explosives.length) {
+                throw new Error('No explosives planned for this blast');
+            }
+
+            // Update status
+            await blastEvent.update({
+                status: 'CHARGING'
+            }, { transaction });
+
+            await transaction.commit();
+            return blastEvent;
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in startCharging:', error);
+            throw error;
+        }
+    }
+
+
+    // services/blast-event.service.js (continued)
+
+    async recordHoleCharging(blast_id, holeChargingData, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            const blastEvent = await BlastEvent.findOne({
+                where: { blast_id },
+                include: ['explosives']
+            });
+
+            if (blastEvent.status !== 'CHARGING') {
+                throw new Error('Blast event must be in CHARGING status');
+            }
+
+            // Group and validate total quantities
+            const plannedTotals = {};
+            const actualTotals = {};
+
+            blastEvent.explosives.forEach(exp => {
+                plannedTotals[exp.explosive_type_id] = exp.quantity_planned;
+                actualTotals[exp.explosive_type_id] = 0;
+            });
+
+            // Process each hole
+            for (const holeData of holeChargingData) {
+                // Update blast hole status
+                const blastHole = await BlastHole.findByPk(holeData.blast_hole_id);
+                if (!blastHole) {
+                    throw new Error(`Blast hole ${holeData.blast_hole_id} not found`);
+                }
+
+                // Record explosives for each hole
+                for (const explosive of holeData.explosives) {
+                    actualTotals[explosive.explosive_type_id] = 
+                        (actualTotals[explosive.explosive_type_id] || 0) + explosive.quantity;
+
+                    // Validate against planned totals
+                    if (actualTotals[explosive.explosive_type_id] > plannedTotals[explosive.explosive_type_id]) {
+                        throw new Error(
+                            `Total quantity for explosive type ${explosive.explosive_type_id} exceeds planned amount`
+                        );
+                    }
+
+                    await BlastHoleExplosive.create({
+                        blast_hole_id: holeData.blast_hole_id,
+                        explosive_type_id: explosive.explosive_type_id,
+                        quantity: explosive.quantity,
+                        charging_sequence: holeData.charging_sequence,
+                        status: 'CHARGED',
+                        created_by: userId
+                    }, { transaction });
+                }
+
+                await blastHole.update({ 
+                    status: 'CHARGED',
+                    remarks: holeData.remarks 
+                }, { transaction });
+            }
+
+            // Update blast event explosives
+            await Promise.all(
+                Object.entries(actualTotals).map(([explosive_type_id, quantity]) =>
+                    BlastEventExplosive.findOne({
+                        where: { 
+                            blast_id,
+                            explosive_type_id 
+                        }
+                    }).then(eventExplosive =>
+                        eventExplosive.update({
+                            quantity_actual: quantity,
+                            status: quantity === eventExplosive.quantity_planned ? 'COMPLETED' : 'CHARGING'
+                        }, { transaction })
+                    )
+                )
+            );
+
+            // Check if charging is complete
+            const isComplete = await this.checkChargingComplete(blast_id, transaction);
+            if (isComplete) {
+                await blastEvent.update({ status: 'READY' }, { transaction });
+            }
+
+            await transaction.commit();
+            return await this.getBlastDetails(blast_id);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in recordHoleCharging:', error);
+            throw error;
+        }
+    }
+
+    async completeBlast(blast_id, completionData, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            const blastEvent = await BlastEvent.findOne({
+                where: { blast_id },
+                include: [
+                    'explosives',
+                    'holes'
+                ]
+            });
+
+            if (!blastEvent) {
+                throw new Error('Blast event not found');
+            }
+
+            if (blastEvent.status !== 'READY') {
+                throw new Error('Blast event must be in READY status');
+            }
+
+            // Update blast event status
+            await blastEvent.update({
+                status: 'COMPLETED',
+                blast_time: new Date(),
+                ...completionData
+            }, { transaction });
+
+            // Update all holes to BLASTED
+            await BlastHole.update(
+                { status: 'BLASTED' },
+                { 
+                    where: { 
+                        blast_id,
+                        status: 'CHARGED'
+                    },
+                    transaction 
+                }
+            );
+
+            // Update daily operation statistics
+            await this.updateDailyOperationStats(
+                blastEvent.daily_blast_id,
+                transaction
+            );
+
+            await transaction.commit();
+            return await this.getBlastDetails(blast_id);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error in completeBlast:', error);
+            throw error;
+        }
+    }
+
+    async checkChargingComplete(blast_id, transaction) {
+        const [allHoles, chargedHoles] = await Promise.all([
+            BlastHole.count({ where: { blast_id } }),
+            BlastHole.count({ where: { blast_id, status: 'CHARGED' } })
+        ]);
+
+        return allHoles === chargedHoles;
+    }
+
+    async updateDailyOperationStats(daily_blast_id, transaction) {
+        const [completedBlasts, dailyOp] = await Promise.all([
+            BlastEvent.count({
+                where: { 
+                    daily_blast_id,
+                    status: 'COMPLETED'
+                }
+            }),
+            DailyBlastOperation.findByPk(daily_blast_id)
+        ]);
+
+        if (completedBlasts === dailyOp.number_of_planned_blasts) {
+            await dailyOp.update({
+                status: 'COMPLETED'
+            }, { transaction });
+        }
+    }
+
+    async getBlastDetails(blast_id) {
+        const blastEvent = await BlastEvent.findOne({
+            where: { blast_id },
+            include: [
+                {
+                    model: BlastEventExplosive,
+                    as: 'explosives',
+                    include: ['explosiveType']
+                },
+                {
+                    model: BlastHole,
+                    as: 'holes',
+                    include: ['explosives']
+                },
+                {
+                    model: DrillingSite,
+                    as: 'drillingSite'
+                }
+            ]
+        });
+
+        if (!blastEvent) {
+            throw new Error('Blast event not found');
+        }
+
+        return blastEvent;
+    }
+}
+
+module.exports = new BlastEventService();
+
+
+
+
+const dailyBlastOperationService = require('../services/daily-blast-operation.service');
+
+class DailyBlastOperationController {
+    async createDailyOperation(req, res) {
+        try {
+            console.log('Create daily blast operation request received:', {
+                miningSiteId: req.body.miningSiteId,
+                operationDate: req.body.operation_date,
+                userId: req.userId
+            });
+
+            const operation = await dailyBlastOperationService.createDailyOperation({
+                ...req.body,
+                userId: req.userId
+            });
+
+            return res.status(201).json({
+                status: 'success',
+                message: 'Daily blast operation created successfully',
+                data: operation
+            });
+        } catch (error) {
+            console.error('Error in createDailyOperation controller:', error);
+            const statusCode = 
+                error.message.includes('already exists') ? 409 :
+                error.message.includes('license') ? 400 : 500;
+            
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async getDailyOperations(req, res) {
+        try {
+            console.log('Get daily operations request received:', {
+                miningSiteId: req.params.miningSiteId,
+                query: req.query
+            });
+
+            const result = await dailyBlastOperationService.getDailyOperations(
+                req.params.miningSiteId,
+                req.query
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                data: result
+            });
+        } catch (error) {
+            console.error('Error in getDailyOperations controller:', error);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Error retrieving daily operations'
+            });
+        }
+    }
+
+    async requestExplosives(req, res) {
+        try {
+            console.log('Request explosives request received:', {
+                dailyBlastId: req.params.daily_blast_id,
+                explosiveCount: req.body.explosives?.length || 0
+            });
+
+            const allocations = await dailyBlastOperationService.requestExplosives(
+                req.params.daily_blast_id,
+                req.body.explosives,
+                req.userId
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Explosives allocated successfully',
+                data: allocations
+            });
+        } catch (error) {
+            console.error('Error in requestExplosives controller:', error);
+            const statusCode = 
+                error.message.includes('Invalid operation status') ? 400 :
+                error.message.includes('Insufficient inventory') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async returnExplosives(req, res) {
+        try {
+            console.log('Return explosives request received:', {
+                dailyBlastId: req.params.daily_blast_id,
+                returnsCount: req.body.returns?.length || 0
+            });
+
+            const result = await dailyBlastOperationService.returnExplosives(
+                req.params.daily_blast_id,
+                req.body.returns,
+                req.userId
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Explosives returned successfully',
+                data: result
+            });
+        } catch (error) {
+            console.error('Error in returnExplosives controller:', error);
+            const statusCode = 
+                error.message.includes('No allocation found') ? 404 :
+                error.message.includes('exceeds available') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async completeOperation(req, res) {
+        try {
+            console.log('Complete operation request received:', {
+                dailyBlastId: req.params.daily_blast_id
+            });
+
+            const operation = await dailyBlastOperationService.completeOperation(
+                req.params.daily_blast_id,
+                req.userId
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Operation completed successfully',
+                data: operation
+            });
+        } catch (error) {
+            console.error('Error in completeOperation controller:', error);
+            const statusCode = 
+                error.message.includes('not found') ? 404 :
+                error.message.includes('not reconciled') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async getDailySummary(req, res) {
+        try {
+            console.log('Get daily summary request received:', {
+                dailyBlastId: req.params.daily_blast_id
+            });
+
+            const summary = await dailyBlastOperationService.getDailySummary(
+                req.params.daily_blast_id
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                data: summary
+            });
+        } catch (error) {
+            console.error('Error in getDailySummary controller:', error);
+            const statusCode = error.message.includes('not found') ? 404 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async validateExplosiveUsage(req, res) {
+        try {
+            console.log('Validate explosive usage request received:', {
+                dailyBlastId: req.params.daily_blast_id
+            });
+
+            const validation = await dailyBlastOperationService.validateExplosiveUsage(
+                req.params.daily_blast_id
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                data: validation
+            });
+        } catch (error) {
+            console.error('Error in validateExplosiveUsage controller:', error);
+            return res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+}
+
+module.exports = new DailyBlastOperationController();
+
+
+// controllers/blast-event.controller.js
+const blastEventService = require('../services/blast-event.service');
+
+class BlastEventController {
+    async createBlastEvent(req, res) {
+        try {
+            console.log('Create blast event request received:', {
+                dailyBlastId: req.body.daily_blast_id,
+                drillingSiteId: req.body.drilling_site_id,
+                userId: req.userId
+            });
+
+            const blastEvent = await blastEventService.createBlastEvent({
+                ...req.body,
+                userId: req.userId
+            });
+
+            return res.status(201).json({
+                status: 'success',
+                message: 'Blast event created successfully',
+                data: blastEvent
+            });
+        } catch (error) {
+            console.error('Error in createBlastEvent controller:', error);
+            const statusCode = 
+                error.message.includes('not found') ? 404 :
+                error.message.includes('not issued') ? 400 :
+                error.message.includes('exceeds available') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async recordHoleCharging(req, res) {
+        try {
+            console.log('Record hole charging request received:', {
+                blastId: req.params.blast_id,
+                holesCount: req.body.holes?.length || 0
+            });
+
+            const result = await blastEventService.recordHoleCharging(
+                req.params.blast_id,
+                req.body.holes,
+                req.userId
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Hole charging recorded successfully',
+                data: result
+            });
+        } catch (error) {
+            console.error('Error in recordHoleCharging controller:', error);
+            const statusCode = 
+                error.message.includes('not found') ? 404 :
+                error.message.includes('must be in CHARGING') ? 400 :
+                error.message.includes('exceeds planned') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async startCharging(req, res) {
+        try {
+            console.log('Start charging request received:', {
+                blastId: req.params.blast_id
+            });
+
+            const blastEvent = await blastEventService.startCharging(
+                req.params.blast_id,
+                req.userId
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Blast charging started successfully',
+                data: blastEvent
+            });
+        } catch (error) {
+            console.error('Error in startCharging controller:', error);
+            const statusCode = 
+                error.message.includes('not found') ? 404 :
+                error.message.includes('Invalid status') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async completeBlast(req, res) {
+        try {
+            console.log('Complete blast request received:', {
+                blastId: req.params.blast_id
+            });
+
+            const result = await blastEventService.completeBlast(
+                req.params.blast_id,
+                req.body,
+                req.userId
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Blast completed successfully',
+                data: result
+            });
+        } catch (error) {
+            console.error('Error in completeBlast controller:', error);
+            const statusCode = 
+                error.message.includes('not found') ? 404 :
+                error.message.includes('must be in READY') ? 400 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    async getBlastDetails(req, res) {
+        try {
+            console.log('Get blast details request received:', {
+                blastId: req.params.blast_id
+            });
+
+            const details = await blastEventService.getBlastDetails(
+                req.params.blast_id
+            );
+
+            return res.status(200).json({
+                status: 'success',
+                data: details
+            });
+        } catch (error) {
+            console.error('Error in getBlastDetails controller:', error);
+            const statusCode = error.message.includes('not found') ? 404 : 500;
+
+            return res.status(statusCode).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+}
+
+module.exports = new BlastEventController();

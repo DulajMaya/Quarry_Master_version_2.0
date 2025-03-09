@@ -1,0 +1,44 @@
+<h2>Weekly Quota Status Update</h2>
+<p>Dear {{userName}},</p>
+
+<div style="background-color: {{#if approved}}#e6ffe6{{else}}#ffe6e6{{/if}}; padding: 15px; border-radius: 5px;">
+    <p>Your quota request has been <strong>{{status}}</strong></p>
+    <p>Quota Reference: {{quotaId}}</p>
+</div>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th style="padding: 10px; border: 1px solid #ddd;">Explosive Type</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Requested Quantity</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Approved Quantity</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Remarks</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each items}}
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{explosiveType}}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{requestedQuantity}}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{approvedQuantity}}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{remarks}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+{{#if approved}}
+<div style="margin-top: 20px;">
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+        <li>Create purchase order within validity period</li>
+        <li>Present quota approval to dealer</li>
+        <li>Update inventory upon receipt</li>
+    </ul>
+</div>
+{{else}}
+<div style="margin-top: 20px;">
+    <p><strong>Rejection Reason:</strong> {{rejectionReason}}</p>
+    <p>Please review and submit a new request if needed.</p>
+</div>
+{{/if}}

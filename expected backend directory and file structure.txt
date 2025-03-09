@@ -1,0 +1,71 @@
+QuarryMaster/
+├── config/
+│   ├── db.config.js                   # Database configuration
+│   ├── env.config.js                  # Environment variables configuration (optional for custom setup)
+│   └── sequelize.js                   # Sequelize instance setup
+│
+├── controllers/
+│   ├── auth.controller.js             # Auth-related (login, signup) logic
+│   ├── user.controller.js             # User-related CRUD and role management logic
+│   ├── license.controller.js          # License management logic
+│   ├── drilledHole.controller.js      # Drilled Hole operations
+│   ├── blast.controller.js            # Blast operations
+│   ├── explosive.controller.js        # Explosive inventory operations
+│   ├── monitoring.controller.js       # Blast monitoring logic
+│   ├── incident.controller.js         # Incident reporting logic
+│   ├── royalty.controller.js          # Royalty payment logic
+│   └── gpsBoundary.controller.js      # GPS boundary management logic
+│
+├── middleware/
+│   ├── auth.middleware.js             # JWT authentication middleware
+│   ├── role.middleware.js             # Role-based authorization middleware
+│   └── error.middleware.js            # Global error handling middleware
+│
+├── models/
+│   ├── index.js                       # Model initialization
+│   ├── user.model.js                  # User model
+│   ├── role.model.js                  # Role model
+│   ├── license.model.js               # License model
+│   ├── drilledHole.model.js           # Drilled Hole model
+│   ├── blast.model.js                 # Blast model
+│   ├── explosivePermit.model.js       # Explosive Permit model
+│   ├── explosiveInventory.model.js    # Explosive Inventory model
+│   ├── monitoring.model.js            # Monitoring data model
+│   ├── incident.model.js              # Incident report model
+│   ├── royalty.model.js               # Royalty payment model
+│   └── gpsBoundary.model.js           # GPS boundary points model
+│
+├── routes/
+│   ├── auth.routes.js                 # Auth routes
+│   ├── user.routes.js                 # User-related routes
+│   ├── license.routes.js              # License management routes
+│   ├── drilledHole.routes.js          # Drilled Hole routes
+│   ├── blast.routes.js                # Blast management routes
+│   ├── explosive.routes.js            # Explosive inventory routes
+│   ├── monitoring.routes.js           # Blast monitoring routes
+│   ├── incident.routes.js             # Incident reporting routes
+│   ├── royalty.routes.js              # Royalty payment routes
+│   └── gpsBoundary.routes.js          # GPS boundary management routes
+│
+├── services/
+│   ├── auth.service.js                # Auth-related functions (e.g., login, signup)
+│   ├── user.service.js                # User management services
+│   ├── license.service.js             # License management services
+│   ├── drilledHole.service.js         # Drilled Hole-related functions
+│   ├── blast.service.js               # Blast-related functions
+│   ├── explosive.service.js           # Explosive inventory functions
+│   ├── monitoring.service.js          # Monitoring data functions
+│   ├── incident.service.js            # Incident reporting functions
+│   ├── royalty.service.js             # Royalty payment functions
+│   └── gpsBoundary.service.js         # GPS boundary management functions
+│
+├── utils/
+│   ├── response.js                    # Standardized response formatter
+│   ├── validateInput.js               # Input validation helper
+│   └── logger.js                      # Logger setup for request logs
+│
+├── .env                               # Environment variables (DB URI, JWT secrets)
+├── app.js                             # Main app initialization, route setup
+├── server.js                          # Server setup and startup
+└── README.md                          # Project documentation
+can get using   cli command tree /F /A > directory_structure.txt

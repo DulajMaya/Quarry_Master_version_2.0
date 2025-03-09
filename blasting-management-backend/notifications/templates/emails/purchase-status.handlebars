@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        .email-container {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #003366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .status-box {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            background-color: #f9f9f9;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .details-table th, .details-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .details-table th {
+            background-color: #f2f2f2;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Quarry Master</h1>
+        </div>
+        <div class="content">
+            <h2>Purchase Order Status Update</h2>
+            <p>Dear {{userName}},</p>
+
+            <div class="status-box">
+                <p>Purchase Order <strong>{{purchaseId}}</strong> has been <strong>{{status}}</strong></p>
+                <p>Store: {{storeName}}</p>
+                <p>Order Date: {{orderDate}}</p>
+                {{#if receiptNumber}}<p>Receipt Number: {{receiptNumber}}</p>{{/if}}
+                {{#if remarks}}<p>Remarks: {{remarks}}</p>{{/if}}
+            </div>
+
+            <h3>Order Details:</h3>
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Explosive Type</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each items}}
+                    <tr>
+                        <td>{{explosiveType}}</td>
+                        <td>{{quantity}} {{unit}}</td>
+                        <td>{{unitPrice}}</td>
+                        <td>{{totalPrice}}</td>
+                    </tr>
+                    {{/each}}
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">Total Amount:</td>
+                        <td>{{totalAmount}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from Quarry Master System</p>
+            <p>© {{year}} Quarry Master. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

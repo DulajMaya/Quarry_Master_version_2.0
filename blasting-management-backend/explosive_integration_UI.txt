@@ -1,0 +1,322 @@
+The next step would be working on the front-end development to create the user interfaces for all the implemented backend functionality. Here's what we need to develop:
+
+Authentication & User Management UI:
+
+typescriptCopy- Login/Logout
+- Role-based dashboards
+- User profile management
+
+Site Engineer Interface:
+
+typescriptCopy- Permit management
+- Weekly quota requests
+- Purchase orders
+- Store inventory tracking
+- Usage reporting
+
+Explosive Controller Interface:
+
+typescriptCopy- Permit approval workflow
+- Quota request approvals
+- Status monitoring
+- Reports and analytics
+
+Explosive Dealer Interface:
+
+typescriptCopy- Purchase order management
+- Delivery tracking
+- Sales reporting
+- Inventory updates
+
+Admin Interface:
+
+typescriptCopy- System monitoring
+- User management
+- Configuration settings
+- Global reporting
+
+
+src/
+|-- app/
+|   |-- core/
+|   |   |-- guards/
+|   |   |   |-- auth.guard.ts
+|   |   |   |-- role.guard.ts
+|   |   |   `-- store.guard.ts
+|   |   |
+|   |   |-- interceptors/
+|   |   |   |-- auth.interceptor.ts
+|   |   |   |-- error.interceptor.ts
+|   |   |   `-- loading.interceptor.ts
+|   |   |
+|   |   |-- services/
+|   |   |   |-- auth.service.ts
+|   |   |   `-- loading.service.ts
+|   |   |
+|   |   `-- models/
+|   |       |-- user.model.ts
+|   |       |-- role.model.ts
+|   |       `-- api-response.model.ts
+|   |
+|   |-- shared/
+|   |   |-- components/
+|   |   |   |-- header/
+|   |   |   |-- sidebar/
+|   |   |   |-- footer/
+|   |   |   |-- alert/
+|   |   |   |-- loading/
+|   |   |   `-- confirm-dialog/
+|   |   |
+|   |   |-- directives/
+|   |   |   |-- has-role.directive.ts
+|   |   |   `-- number-only.directive.ts
+|   |   |
+|   |   |-- pipes/
+|   |   |   |-- date-format.pipe.ts
+|   |   |   `-- status-format.pipe.ts
+|   |   |
+|   |   `-- utils/
+|   |       |-- constants.ts
+|   |       `-- helpers.ts
+|   |
+|   |-- features/
+|   |   |-- auth/
+|   |   |   |-- login/
+|   |   |   |-- register/
+|   |   |   `-- auth.module.ts
+|   |   |
+|   |   |-- site-engineer/
+|   |   |   |-- components/
+|   |   |   |   |-- dashboard/
+|   |   |   |   |-- permit-list/
+|   |   |   |   |-- permit-form/
+|   |   |   |   |-- quota-list/
+|   |   |   |   |-- quota-form/
+|   |   |   |   |-- purchase-list/
+|   |   |   |   |-- purchase-form/
+|   |   |   |   |-- store-inventory/
+|   |   |   |   `-- usage-report/
+|   |   |   |
+|   |   |   |-- services/
+|   |   |   |   |-- permit.service.ts
+|   |   |   |   |-- quota.service.ts
+|   |   |   |   |-- purchase.service.ts
+|   |   |   |   `-- inventory.service.ts
+|   |   |   |
+|   |   |   |-- models/
+|   |   |   |   |-- permit.model.ts
+|   |   |   |   |-- quota.model.ts
+|   |   |   |   |-- purchase.model.ts
+|   |   |   |   `-- inventory.model.ts
+|   |   |   |
+|   |   |   `-- site-engineer.module.ts
+|   |   |
+|   |   |-- explosive-controller/
+|   |   |   |-- components/
+|   |   |   |   |-- dashboard/
+|   |   |   |   |-- permit-approval/
+|   |   |   |   |-- quota-approval/
+|   |   |   |   `-- reports/
+|   |   |   |
+|   |   |   |-- services/
+|   |   |   |-- models/
+|   |   |   `-- explosive-controller.module.ts
+|   |   |
+|   |   `-- explosive-dealer/
+|   |       |-- components/
+|   |       |   |-- dashboard/
+|   |       |   |-- order-list/
+|   |       |   |-- order-detail/
+|   |       |   `-- sales-report/
+|   |       |
+|   |       |-- services/
+|   |       |-- models/
+|   |       `-- explosive-dealer.module.ts
+|   |
+|   |-- layouts/
+|   |   |-- admin-layout/
+|   |   |-- site-engineer-layout/
+|   |   |-- controller-layout/
+|   |   `-- dealer-layout/
+|   |
+|   `-- app.module.ts
+|
+|-- assets/
+|   |-- images/
+|   |-- icons/
+|   `-- styles/
+|
+|-- environments/
+|   |-- environment.ts
+|   `-- environment.prod.ts
+|
+|-- styles/
+|   |-- _variables.scss
+|   |-- _mixins.scss
+|   `-- styles.scss
+|
+`-- index.html
+
+
+NgModule({
+  declarations: [
+    DashboardComponent,
+    PermitListComponent,
+    PermitFormComponent,
+    QuotaListComponent,
+    QuotaFormComponent,
+    PurchaseListComponent,
+    PurchaseFormComponent,
+    StoreInventoryComponent,
+    UsageReportComponent
+  ],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule.forChild([
+      {
+        path: '',
+        component: SiteEngineerLayoutComponent,
+        children: [
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: 'dashboard', component: DashboardComponent },
+          { path: 'permits', component: PermitListComponent },
+          { path: 'permits/new', component: PermitFormComponent },
+          { path: 'quotas', component: QuotaListComponent },
+          // ... other routes
+        ]
+      }
+    ]),
+    SharedModule
+  ],
+  providers: [
+    PermitService,
+    QuotaService,
+    PurchaseService,
+    InventoryService
+  ]
+})
+export class SiteEngineerModule { }
+Would you like me to show:
+
+Specific component implementation?
+Service implementation?
+Guard implementation?
+Routing setup?
+State management with services?
+
+Let me know which part you'd like to see in detail!
+
+
+Let me break down the necessary UIs and their corresponding APIs:
+
+1. **Login/Registration UI**
+```typescript
+APIs:
+POST /api/auth/login
+POST /api/auth/register
+```
+
+2. **Admin Dashboard**
+- User management section
+- System overview
+- Reports overview
+```typescript
+APIs:
+GET /api/users
+GET /api/reports/summary
+GET /api/stats/overview
+```
+
+3. **Site Engineer Dashboard**
+```typescript
+Main Features:
+- Current inventory levels
+- Recent issuances/returns
+- Active permits/quotas
+- Pending approvals
+
+APIs:
+GET /api/store-inventory/store/:storeId
+GET /api/issuance/store/:storeId
+GET /api/permits/site/:siteId
+GET /api/quotas/pending
+```
+
+4. **Store Inventory Management**
+```typescript
+Features:
+- Current stock levels
+- Low stock alerts
+- Movement history
+- Stock adjustments
+
+APIs:
+GET /api/store-inventory/:storeId
+GET /api/store-inventory/low-stock
+GET /api/inventory-movements/:inventoryId
+PUT /api/store-inventory/adjust
+```
+
+5. **Explosive Issuance Interface**
+```typescript
+Features:
+- Issue form
+- Return form
+- Issuance history
+- Usage reports
+
+APIs:
+POST /api/issuance
+POST /api/issuance/:id/return
+GET /api/issuance/history
+GET /api/issuance/reports
+```
+
+6. **Permit Management**
+```typescript
+Features:
+- Permit application
+- Status tracking
+- Document upload
+- History view
+
+APIs:
+POST /api/permits
+GET /api/permits/:id
+PUT /api/permits/:id/status
+POST /api/permits/documents
+```
+
+7. **Weekly Quota Management**
+```typescript
+Features:
+- Quota request form
+- Approval status
+- Usage tracking
+- History view
+
+APIs:
+POST /api/quotas
+GET /api/quotas/:id
+PUT /api/quotas/:id/status
+GET /api/quotas/history
+```
+
+8. **Purchase Management**
+```typescript
+Features:
+- Order creation
+- Status tracking
+- Payment management
+- Delivery tracking
+
+APIs:
+POST /api/purchases
+GET /api/purchases/:id
+PUT /api/purchases/:id/status
+PUT /api/purchases/:id/payment
+```
+
+Would you like me to detail any specific UI component or show its implementation?

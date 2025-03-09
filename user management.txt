@@ -1,0 +1,104 @@
+To achieve this, let's first set up the Angular components and services to display a list of registered users and provide basic actions (approve, change role, and delete) with dummy implementations for now. Here’s a step-by-step guide on how to implement this using best practices.
+
+Step 1: Set up User Management Component
+First, let's create a component to display user management data.
+
+Generate a Component:
+
+bash
+Copy code
+ng generate component user-management
+Add Route for User Management: In app.routes.ts, add a route to load this component when clicking "User Management."
+
+typescript
+Copy code
+{ path: 'user-management', component: UserManagementComponent }
+Update Navigation Link in main-layout.component.html: Modify the <a> tag for "User Management" to route to this component:
+
+html
+Copy code
+<a class="nav-link" routerLink="/user-management">User Management</a>
+Step 2: Create the User Model
+Define a model for the user data to ensure type safety and maintain code readability.
+
+typescript
+Copy code
+// app/models/user.model.ts
+export interface User {
+  id: number;
+  email: string;
+  role: string;
+  status: boolean;
+}
+Step 3: Create the User Service
+The service will interact with the backend API to retrieve users. For now, we’ll use a dummy list of users.
+
+typescript
+Copy code
+// app/services/user.service.ts
+import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { User } from '../models/user.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UserService {
+  constructor() {}
+
+  // Dummy list of users
+  getUsers(): Observable<User[]> {
+    return of([
+      { id: 1, email: 'user1@example.com', role: 'Admin', status: true },
+      { id: 2, email: 'user2@example.com', role: 'User', status: false },
+      { id: 3, email: 'user3@example.com', role: 'Moderator', status: true }
+    ]);
+  }
+
+  // Dummy methods for actions
+  approveUser(id: number): Observable<boolean> {
+    return of(true);
+  }
+
+  changeUserRole(id: number, role: string): Observable<boolean> {
+    return of(true);
+  }
+
+  deleteUser(id: number): Observable<boolean> {
+    return of(true);
+  }
+}
+Step 4: Implement the User Management Component
+Now, we’ll use this service in the UserManagementComponent to fetch users and display them in a table format.
+
+typescript
+Copy code
+// app/components/user-management/user-management.component.ts
+import { Component, OnInit } from '@angular/core';
+import { UserService } from '../../services/user.service';
+import { User } from '../../models/user.model';
+
+@Component({
+  selector: 'app-user-management',
+  templateUrl: './user-management.component.html',
+  styleUrls: ['./user-management.component.css']
+})
+export class UserManagementComponent implements OnInit {
+  users: User[] = [];
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit(): void {
+    this.loadUsers();
+  }
+
+  loadUsers(): void {
+    this.userService.getUsers().subscribe((data) => (this.users = data));
+  }
+
+  onApproveUser(id: number): void {
+    this.userService.approveUser(id).subscribe(() => this.loadUsers());
+  }
+
+  onChangeRole(id: number, role: string): void {
+    this.userService.changeUserRole(id

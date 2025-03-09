@@ -1,0 +1,297 @@
+Let me break down each panel:
+
+**1. Site Engineer Panel:**
+```typescript
+Main Dashboard:
+- Store inventory summary 
+- Active permits/quotas status
+- Recent issuances/returns
+- Low stock alerts
+
+APIs:
+GET /api/store-inventory/store/:storeId
+GET /api/permits/active
+GET /api/quotas/active
+GET /api/issuance/recent
+
+Menu Items:
+1. Inventory Management
+   - View current stock
+   - Issue explosives
+   - Record returns
+   APIs:
+   GET /api/store-inventory/details
+   POST /api/issuance
+   POST /api/issuance/:id/return
+
+2. Permit Management
+   - Apply for new permit
+   - View permits
+   - Track status
+   APIs:
+   POST /api/permits
+   GET /api/permits/list
+   GET /api/permits/:id
+
+3. Quota Management
+   - Request weekly quota
+   - View quotas
+   - Usage tracking
+   APIs:
+   POST /api/quotas
+   GET /api/quotas/list
+   GET /api/quotas/:id/usage
+
+4. Purchase Management
+   - Create purchase order
+   - Track orders
+   - Manage deliveries
+   APIs:
+   POST /api/purchases
+   GET /api/purchases/list
+   PUT /api/purchases/:id/confirm
+```
+
+**2. Explosive Controller Panel:**
+```typescript
+Main Dashboard:
+- Pending approvals
+- Recent permits issued
+- District-wise statistics
+- Alert notifications
+
+APIs:
+GET /api/permits/pending
+GET /api/quotas/pending
+GET /api/stats/district
+
+Menu Items:
+1. Permit Management
+   - Review applications
+   - Issue permits
+   - Track permits
+   APIs:
+   GET /api/permits/pending
+   PUT /api/permits/:id/approve
+   GET /api/permits/history
+
+2. Quota Management
+   - Review requests
+   - Approve quotas
+   - Monitor usage
+   APIs:
+   GET /api/quotas/pending
+   PUT /api/quotas/:id/approve
+   GET /api/quotas/usage
+
+3. Reports
+   - District reports
+   - Usage statistics
+   - Compliance reports
+   APIs:
+   GET /api/reports/district
+   GET /api/reports/usage
+   GET /api/reports/compliance
+```
+
+**3. Explosive Dealer Panel:**
+```typescript
+Main Dashboard:
+- Purchase orders summary
+- Delivery status
+- Stock levels
+- Revenue statistics
+
+APIs:
+GET /api/purchases/pending
+GET /api/deliveries/status
+GET /api/stats/sales
+
+Menu Items:
+1. Order Management
+   - View orders
+   - Confirm orders
+   - Update status
+   APIs:
+   GET /api/purchases/list
+   PUT /api/purchases/:id/confirm
+   PUT /api/purchases/:id/status
+
+2. Delivery Management
+   - Schedule deliveries
+   - Track deliveries
+   - Update status
+   APIs:
+   POST /api/deliveries
+   GET /api/deliveries/list
+   PUT /api/deliveries/:id/status
+
+3. Sales Reports
+   - Daily sales
+   - Monthly summary
+   - Customer reports
+   APIs:
+   GET /api/reports/daily-sales
+   GET /api/reports/monthly
+   GET /api/reports/customers
+
+4. Stock Management
+   - Stock levels
+   - Sales history
+   - Stock alerts
+   APIs:
+   GET /api/stock/levels
+   GET /api/sales/history
+   GET /api/stock/alerts
+```
+
+Would you like me to detail any specific panel's UI components or show the implementation?
+
+
+Here's the Site Engineer Panel structure with all necessary APIs, focused on single site management:
+
+**Dashboard:**
+```typescript
+- Store inventory status for assigned site
+GET /api/store-inventory/store/:siteId
+- Active permit/quota status
+GET /api/permits/site/:siteId/active
+GET /api/quotas/site/:siteId/active
+- Recent issuances/returns
+GET /api/issuance/store/:storeId/recent
+```
+
+**1. Store Inventory Management:**
+```typescript
+View Inventory:
+GET /api/store-inventory/store/:storeId
+GET /api/store-inventory/low-stock
+
+Issue Explosives:
+POST /api/issuance
+{
+    storeId: string,
+    purpose: string,
+    items: [{explosiveTypeId, quantity}]
+}
+
+Record Returns:
+POST /api/issuance/:issuanceId/return
+{
+    items: [{explosiveTypeId, usedQuantity, returnedQuantity}]
+}
+
+View Issuance History:
+GET /api/issuance/store/:storeId
+```
+
+**2. Permit Management:**
+```typescript
+Apply for Permit:
+POST /api/permits
+{
+    miningSiteId: string,
+    purpose: string,
+    explosives: [{typeId, quantity}],
+    documents: [files]
+}
+
+View Permits:
+GET /api/permits/site/:siteId
+GET /api/permits/:permitId
+
+Track Remaining Quantities:
+GET /api/permits/:permitId/remaining
+```
+
+**3. Weekly Quota:**
+```typescript
+Request Quota:
+POST /api/quotas
+{
+    permitId: string,
+    plannedUsageDate: date,
+    items: [{explosiveTypeId, quantity}]
+}
+
+View Quotas:
+GET /api/quotas/permit/:permitId
+GET /api/quotas/:quotaId/details
+
+Track Usage:
+GET /api/quotas/:quotaId/usage
+```
+
+**4. Purchase Management:**
+```typescript
+Create Purchase Order:
+POST /api/purchases
+{
+    quotaId: string,
+    dealerId: string,
+    items: [{explosiveTypeId, quantity}]
+}
+
+View Orders:
+GET /api/purchases/store/:storeId
+GET /api/purchases/:purchaseId
+
+Receive Delivery:
+PUT /api/purchases/:purchaseId/receive
+{
+    items: [{explosiveTypeId, receivedQuantity}]
+}
+```
+
+**New APIs Needed:**
+```typescript
+// Get approved dealers for site's district
+GET /api/dealers/district/:districtId
+
+// Get site's storage capacity
+GET /api/stores/:storeId/capacity
+
+// Get consolidated usage reports
+GET /api/reports/site/:siteId/usage
+
+// Track explosive usage history
+GET /api/reports/site/:siteId/explosive-usage
+```
+
+Would you like me to detail any specific component's implementation?
+
+
+The API `GET /api/store-inventory/low-stock` should include query parameters for better filtering and site-specific access. Here's the improved version:
+
+```typescript
+GET /api/store-inventory/low-stock?siteId=:siteId&threshold=:threshold
+
+Response:
+{
+  status: 'success',
+  data: {
+    lowStockItems: [{
+      inventoryId: string,
+      explosiveType: string,
+      currentQuantity: number,
+      minimumLevel: number,
+      threshold: number,
+      lastUpdated: date,
+      store: {
+        storeId: string,
+        name: string
+      }
+    }],
+    totalItems: number,
+    criticalItems: number
+  }
+}
+```
+
+Additionally, we should have alerts API:
+```typescript
+GET /api/store-inventory/alerts?siteId=:siteId
+- Returns both low stock and expiring batch alerts
+```
+
+Would you like me to show the service implementation for these APIs?

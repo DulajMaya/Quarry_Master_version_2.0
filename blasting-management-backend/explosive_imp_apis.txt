@@ -1,0 +1,95 @@
+backend/
+|-- config/
+|   |-- db.config.js          // Database configuration
+|   `-- auth.config.js        // Auth-related configuration
+
+|-- models/
+|   |-- index.js             // Model relationships
+|   |-- user.model.js        // ✓ Completed
+|   |-- role.model.js        // ✓ Completed
+|   |-- site-engineer.model.js
+|   |-- explosive-controller.model.js
+|   |-- explosive-dealer.model.js
+|   |-- explosive-type.model.js       // ✓ Completed
+|   |-- explosive-store.model.js      // ✓ Completed
+|   |-- store-inventory.model.js      // ✓ Completed
+|   |-- store-threshold.model.js
+|   |-- explosive-permit.model.js     // ✓ Completed
+|   |-- permit-allowed-explosive.model.js
+|   |-- weekly-quota.model.js         // ✓ Completed
+|   |-- quota-items.model.js
+|   |-- purchase.model.js             // ✓ Completed
+|   `-- purchase-items.model.js
+
+|-- controllers/
+|   |-- auth.controller.js
+|   |-- user.controller.js
+|   |-- site-engineer.controller.js
+|   |-- explosive-controller.controller.js
+|   |-- explosive-dealer.controller.js
+|   |-- explosive-type.controller.js
+|   |-- explosive-store.controller.js
+|   |-- store-inventory.controller.js
+|   |-- store-threshold.controller.js
+|   |-- explosive-permit.controller.js
+|   |-- weekly-quota.controller.js
+|   `-- purchase.controller.js
+
+|-- services/
+|   |-- auth.service.js
+|   |-- user.service.js
+|   |-- site-engineer.service.js
+|   |-- explosive-controller.service.js
+|   |-- explosive-dealer.service.js
+|   |-- explosive-type.service.js
+|   |-- explosive-store.service.js
+|   |-- store-inventory.service.js
+|   |-- store-threshold.service.js
+|   |-- explosive-permit.service.js
+|   |-- weekly-quota.service.js
+|   |-- purchase.service.js
+|   `-- id-generator.service.js
+
+|-- routes/
+|   |-- auth.routes.js
+|   |-- user.routes.js
+|   |-- site-engineer.routes.js
+|   |-- explosive-controller.routes.js
+|   |-- explosive-dealer.routes.js
+|   |-- explosive-type.routes.js
+|   |-- explosive-store.routes.js
+|   |-- store-inventory.routes.js
+|   |-- store-threshold.routes.js
+|   |-- explosive-permit.routes.js
+|   |-- weekly-quota.routes.js
+|   `-- purchase.routes.js
+
+|-- middleware/
+|   |-- auth.middleware.js          // ✓ Completed
+|   |-- role.middleware.js          // ✓ Completed
+|   |-- access-control.middleware.js
+|   `-- upload.middleware.js
+
+|-- utils/
+|   |-- response.js
+|   |-- validateInput.js
+|   |-- email.util.js
+|   `-- upload.util.js
+
+|-- schedulers/
+|   |-- index.js
+|   |-- license-scheduler.js
+|   |-- inventory-scheduler.js
+|   `-- utils/
+|       `-- notification-helper.js
+
+|-- uploads/
+|   |-- permits/
+|   |-- quotas/
+|   |-- receipts/
+|   `-- documents/
+
+|-- .env
+|-- app.js
+|-- server.js
+`-- package.json

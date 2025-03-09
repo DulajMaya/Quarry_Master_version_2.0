@@ -1,0 +1,13 @@
+<h2>Notification Settings Update</h2>
+<p>Dear {{userName}},</p>
+
+<div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px;">
+    <p>Your notification settings have been updated:</p>
+    <ul>
+        {{#each settings}}
+        <li>{{type}}: {{#if enabled}}Enabled{{else}}Disabled{{/if}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<p style="margin-top: 20px;">You can update these settings anytime from your profile settings page.</p>

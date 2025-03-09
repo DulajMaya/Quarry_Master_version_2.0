@@ -1,0 +1,38 @@
+<h2>Permit Expiry Notice</h2>
+<p>Dear {{userName}},</p>
+
+<p>This is to notify you that the following explosive permit(s) will expire soon:</p>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th style="padding: 10px; border: 1px solid #ddd;">Permit Number</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Issue Date</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Expiry Date</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Days Remaining</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each permits}}
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{permitNumber}}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{issueDate}}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{expiryDate}}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; color: {{#if critical}}red{{else}}orange{{/if}};">
+                {{daysRemaining}} days
+            </td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+<p style="margin-top: 20px;">Please initiate permit renewal process if required.</p>
+
+<div style="margin-top: 30px;">
+    <p><strong>Action Required:</strong></p>
+    <ul>
+        <li>Review permit details</li>
+        <li>Prepare renewal documentation</li>
+        <li>Submit renewal application</li>
+    </ul>
+</div>

@@ -1,0 +1,1420 @@
+Here are the Store/Inventory APIs with sample request and response data:
+
+1. **Initialize Store Inventory:**
+```javascript
+POST /api/store-inventory/initialize
+Request:
+{
+    "storeId": "STR001",
+    "explosiveTypeId": "EXP001",
+    "minimumLevel": 100,
+    "maximumLevel": 1000
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "InventoryID": "INV001",
+        "StoreID": "STR001",
+        "ExplosiveTypeID": "EXP001",
+        "CurrentQuantity": 0,
+        "MinimumLevel": 100,
+        "MaximumLevel": 1000,
+        "Status": "OutOfStock"
+    }
+}
+```
+
+2. **Get Store Inventory:**
+```javascript
+GET /api/store-inventory/store/STR001
+Response:
+{
+    "status": "success",
+    "data": [
+        {
+            "InventoryID": "INV001",
+            "ExplosiveType": {
+                "ExplosiveTypeID": "EXP001",
+                "TypeName": "Electrical Detonator",
+                "UnitOfMeasurement": "Units"
+            },
+            "CurrentQuantity": 500,
+            "MinimumLevel": 100,
+            "MaximumLevel": 1000,
+            "Status": "Active",
+            "LastUpdated": "2024-01-20T10:30:00Z"
+        },
+        {
+            "InventoryID": "INV002",
+            "ExplosiveType": {
+                "ExplosiveTypeID": "EXP002",
+                "TypeName": "Ammonium Nitrate",
+                "UnitOfMeasurement": "KG"
+            },
+            "CurrentQuantity": 80,
+            "MinimumLevel": 100,
+            "MaximumLevel": 2000,
+            "Status": "LowStock",
+            "LastUpdated": "2024-01-20T10:30:00Z"
+        }
+    ]
+}
+```
+
+3. **Check Low Stock:**
+```javascript
+GET /api/store-inventory/low-stock?siteId=SITE001
+Response:
+{
+    "status": "success",
+    "data": {
+        "lowStockItems": [
+            {
+                "InventoryID": "INV002",
+                "Store": {
+                    "StoreID": "STR001",
+                    "StoreName": "Main Store"
+                },
+                "ExplosiveType": {
+                    "ExplosiveTypeID": "EXP002",
+                    "TypeName": "Ammonium Nitrate"
+                },
+                "CurrentQuantity": 80,
+                "MinimumLevel": 100,
+                "Status": "LowStock",
+                "LastUpdated": "2024-01-20T10:30:00Z"
+            }
+        ],
+        "totalItems": 1,
+        "criticalItems": 1
+    }
+}
+```
+
+4. **Update Inventory (Purchase):**
+```javascript
+PUT /api/store-inventory/INV001
+Request:
+{
+    "quantity": 200,
+    "movementType": "IN",
+    "referenceData": {
+        "type": "Purchase",
+        "id": "PUR001",
+        "batchNumber": "BATCH001",
+        "remarks": "Purchase from Dealer"
+    }
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "InventoryID": "INV001",
+        "CurrentQuantity": 700,
+        "Status": "Active",
+        "LastUpdated": "2024-01-20T11:30:00Z"
+    }
+}
+```
+
+5. **Update Inventory (Issuance):**
+```javascript
+PUT /api/store-inventory/INV001
+Request:
+{
+    "quantity": 50,
+    "movementType": "OUT",
+    "referenceData": {
+        "type": "Issuance",
+        "id": "ISS001",
+        "remarks": "Daily blasting"
+    }
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "InventoryID": "INV001",
+        "CurrentQuantity": 650,
+        "Status": "Active",
+        "LastUpdated": "2024-01-20T14:30:00Z"
+    }
+}
+```
+
+6. **Get Inventory Movements:**
+```javascript
+GET /api/store-inventory/INV001/movements?startDate=2024-01-01&endDate=2024-01-31
+Response:
+{
+    "status": "success",
+    "data": {
+        "movements": [
+            {
+                "MovementID": "MOV001",
+                "MovementType": "IN",
+                "Quantity": 200,
+                "ReferenceType": "Purchase",
+                "ReferenceID": "PUR001",
+                "PreviousQuantity": 500,
+                "NewQuantity": 700,
+                "BatchNumber": "BATCH001",
+                "CreatedAt": "2024-01-20T11:30:00Z"
+            },
+            {
+                "MovementID": "MOV002",
+                "MovementType": "OUT",
+                "Quantity": 50,
+                "ReferenceType": "Issuance",
+                "ReferenceID": "ISS001",
+                "PreviousQuantity": 700,
+                "NewQuantity": 650,
+                "CreatedAt": "2024-01-20T14:30:00Z"
+            }
+        ]
+    }
+}
+```
+
+7. **Get Inventory Report:**
+```javascript
+GET /api/store-inventory/store/STR001/report
+Response:
+{
+    "status": "success",
+    "data": {
+        "reportDate": "2024-01-20T15:00:00Z",
+        "storeName": "Main Store",
+        "storeId": "STR001",
+        "summary": {
+            "totalItems": 2,
+            "totalValue": 730,
+            "lowStockItems": 1
+        },
+        "inventory": [
+            {
+                "explosiveType": "Electrical Detonator",
+                "currentQuantity": 650,
+                "minimumLevel": 100,
+                "maximumLevel": 1000,
+                "status": "Active",
+                "lastUpdated": "2024-01-20T14:30:00Z",
+                "recentMovements": [
+                    // Last 10 movements
+                ]
+            },
+            {
+                "explosiveType": "Ammonium Nitrate",
+                "currentQuantity": 80,
+                "minimumLevel": 100,
+                "maximumLevel": 2000,
+                "status": "LowStock",
+                "lastUpdated": "2024-01-20T10:30:00Z",
+                "recentMovements": [
+                    // Last 10 movements
+                ]
+            }
+        ]
+    }
+}
+```
+
+Would you like to see:
+1. More detailed error responses?
+2. Additional inventory operations?
+3. Sample data for other APIs?
+4. Query parameters for filtering?
+
+I'll start with Permit and Quota related APIs, then we can move to others:
+
+**1. Explosive Permit APIs:**
+```javascript
+// Create Permit
+POST /api/permits
+Request:
+{
+    "miningSiteId": "SITE001",
+    "licenseId": "LIC001",
+    "controllerId": "CTRL001",
+    "purpose": "Regular mining operations",
+    "validityPeriod": 180,
+    "explosives": [
+        {
+            "explosiveTypeId": "EXP001",
+            "quantity": 5000,
+            "unit": "Units"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "quantity": 10000,
+            "unit": "KG"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "PermitID": "PER001",
+        "Status": "Pending",
+        "IssueDate": "2024-01-20T09:00:00Z",
+        "ExpiryDate": "2024-07-20T09:00:00Z",
+        "AllowedExplosives": [
+            {
+                "ExplosiveTypeID": "EXP001",
+                "AllowedQuantity": 5000,
+                "RemainingQuantity": 5000,
+                "Unit": "Units"
+            },
+            {
+                "ExplosiveTypeID": "EXP002",
+                "AllowedQuantity": 10000,
+                "RemainingQuantity": 10000,
+                "Unit": "KG"
+            }
+        ]
+    }
+}
+
+// Get Site Permits
+GET /api/permits/site/SITE001
+Response:
+{
+    "status": "success",
+    "data": {
+        "permits": [
+            {
+                "PermitID": "PER001",
+                "Status": "Active",
+                "IssueDate": "2024-01-20T09:00:00Z",
+                "ExpiryDate": "2024-07-20T09:00:00Z",
+                "AllowedExplosives": [
+                    {
+                        "ExplosiveType": {
+                            "TypeName": "Electrical Detonator"
+                        },
+                        "AllowedQuantity": 5000,
+                        "RemainingQuantity": 4200,
+                        "Unit": "Units"
+                    }
+                ]
+            }
+        ]
+    }
+}
+```
+
+**2. Weekly Quota APIs:**
+```javascript
+// Request Quota
+POST /api/quotas
+Request:
+{
+    "permitId": "PER001",
+    "plannedUsageDate": "2024-01-25",
+    "purpose": "Weekly blasting operation",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "quantity": 500,
+            "unit": "Units"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "quantity": 1000,
+            "unit": "KG"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "QuotaID": "QTA001",
+        "Status": "Pending",
+        "RequestDate": "2024-01-20T10:00:00Z",
+        "PlannedUsageDate": "2024-01-25",
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "RequestedQuantity": 500,
+                "Unit": "Units"
+            }
+        ]
+    }
+}
+
+// Get Quota Details
+GET /api/quotas/QTA001
+Response:
+{
+    "status": "success",
+    "data": {
+        "QuotaID": "QTA001",
+        "Status": "Approved",
+        "RequestDate": "2024-01-20T10:00:00Z",
+        "ApprovalDate": "2024-01-20T14:00:00Z",
+        "PlannedUsageDate": "2024-01-25",
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "RequestedQuantity": 500,
+                "ApprovedQuantity": 500,
+                "Unit": "Units"
+            }
+        ]
+    }
+}
+```
+
+Would you like me to continue with:
+1. Purchase APIs
+2. Issuance/Return APIs
+3. User Management APIs
+4. Other specific APIs?
+
+Let me know which section you'd like to see next!
+
+Here are the complete Purchase APIs with sample data:
+
+```javascript
+1. /**
+ * Create Purchase Order
+ * POST /api/purchases
+ */
+Request:
+{
+    "quotaId": "QTA001",
+    "dealerId": "DEAL001",
+    "storeId": "STR001",
+    "paymentMethod": "BankTransfer",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "quantity": 500,
+            "unitPrice": 100.00,
+            "batchNumber": "BATCH001",
+            "manufactureDate": "2024-01-01",
+            "expiryDate": "2025-01-01"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "quantity": 1000,
+            "unitPrice": 50.00,
+            "batchNumber": "BATCH002",
+            "manufactureDate": "2024-01-01",
+            "expiryDate": "2025-01-01"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "PurchaseID": "PUR001",
+        "Status": "Pending",
+        "TotalAmount": 100000.00,
+        "PurchaseDate": "2024-01-20T10:00:00Z",
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "Quantity": 500,
+                "UnitPrice": 100.00,
+                "TotalPrice": 50000.00,
+                "BatchNumber": "BATCH001"
+            },
+            {
+                "ExplosiveType": {
+                    "TypeName": "Ammonium Nitrate"
+                },
+                "Quantity": 1000,
+                "UnitPrice": 50.00,
+                "TotalPrice": 50000.00,
+                "BatchNumber": "BATCH002"
+            }
+        ]
+    }
+}
+
+2. /**
+ * Dealer Confirms Purchase
+ * PATCH /api/purchases/PUR001/status
+ */
+Request:
+{
+    "status": "Confirmed",
+    "receiptNumber": "REC001",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "quantity": 500,
+            "batchNumber": "BATCH001"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "quantity": 1000,
+            "batchNumber": "BATCH002"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "PurchaseID": "PUR001",
+        "Status": "Confirmed",
+        "ReceiptNumber": "REC001",
+        "DealerConfirmationDate": "2024-01-20T11:00:00Z"
+    }
+}
+
+3. /**
+ * Record Delivery
+ * PATCH /api/purchases/PUR001/delivery
+ */
+Request:
+{
+    "status": "Delivered",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "receivedQuantity": 500,
+            "batchNumber": "BATCH001"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "receivedQuantity": 1000,
+            "batchNumber": "BATCH002"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "PurchaseID": "PUR001",
+        "Status": "Delivered",
+        "DeliveryDate": "2024-01-21T10:00:00Z",
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "Quantity": 500,
+                "ReceivedQuantity": 500,
+                "BatchNumber": "BATCH001"
+            }
+        ]
+    }
+}
+
+4. /**
+ * Get Purchase Details
+ * GET /api/purchases/PUR001
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "PurchaseID": "PUR001",
+        "QuotaID": "QTA001",
+        "DealerID": "DEAL001",
+        "Status": "Delivered",
+        "TotalAmount": 100000.00,
+        "PurchaseDate": "2024-01-20T10:00:00Z",
+        "ReceiptNumber": "REC001",
+        "PaymentStatus": "Completed",
+        "DeliveryDate": "2024-01-21T10:00:00Z",
+        "Dealer": {
+            "Name": "Explosive Dealer 1",
+            "ContactNumber": "1234567890"
+        },
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "Quantity": 500,
+                "UnitPrice": 100.00,
+                "TotalPrice": 50000.00,
+                "BatchNumber": "BATCH001",
+                "ManufactureDate": "2024-01-01",
+                "ExpiryDate": "2025-01-01",
+                "ReceivedQuantity": 500
+            },
+            {
+                "ExplosiveType": {
+                    "TypeName": "Ammonium Nitrate"
+                },
+                "Quantity": 1000,
+                "UnitPrice": 50.00,
+                "TotalPrice": 50000.00,
+                "BatchNumber": "BATCH002",
+                "ManufactureDate": "2024-01-01",
+                "ExpiryDate": "2025-01-01",
+                "ReceivedQuantity": 1000
+            }
+        ]
+    }
+}
+
+5. /**
+ * Get Store Purchases
+ * GET /api/purchases/store/STR001?status=Active
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "purchases": [
+            {
+                "PurchaseID": "PUR001",
+                "Status": "Delivered",
+                "TotalAmount": 100000.00,
+                "PurchaseDate": "2024-01-20T10:00:00Z",
+                "Dealer": {
+                    "Name": "Explosive Dealer 1"
+                },
+                "Items": [/* Summary of items */]
+            }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "totalPages": 1
+    }
+}
+
+6. /**
+ * Update Payment Status
+ * PATCH /api/purchases/PUR001/payment
+ */
+Request:
+{
+    "paymentStatus": "Completed",
+    "paymentReference": "PAY001",
+    "paymentDate": "2024-01-21T09:00:00Z"
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "PurchaseID": "PUR001",
+        "PaymentStatus": "Completed",
+        "PaymentReference": "PAY001",
+        "PaymentDate": "2024-01-21T09:00:00Z"
+    }
+}
+```
+
+Would you like me to:
+1. Show more specific error responses?
+2. Add more purchase-related APIs?
+3. Show integration with inventory updates?
+4. Show the next set of APIs?
+
+
+Here are the complete Issuance/Return APIs with sample data:
+
+```javascript
+1. /**
+ * Create New Issuance
+ * POST /api/issuance
+ */
+Request:
+{
+    "storeId": "STR001",
+    "purpose": "Daily blasting operation",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "inventoryId": "INV001",
+            "quantity": 100,
+            "batchNumber": "BATCH001"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "inventoryId": "INV002",
+            "quantity": 200,
+            "batchNumber": "BATCH002"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "IssuanceID": "ISS001",
+        "StoreID": "STR001",
+        "Status": "Issued",
+        "Purpose": "Daily blasting operation",
+        "IssuanceDate": "2024-01-22T08:00:00Z",
+        "IssuedBy": {
+            "UserId": 1,
+            "Name": "John Doe"
+        },
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "IssuedQuantity": 100,
+                "UsedQuantity": 0,
+                "ReturnedQuantity": 0,
+                "BatchNumber": "BATCH001"
+            },
+            {
+                "ExplosiveType": {
+                    "TypeName": "Ammonium Nitrate"
+                },
+                "IssuedQuantity": 200,
+                "UsedQuantity": 0,
+                "ReturnedQuantity": 0,
+                "BatchNumber": "BATCH002"
+            }
+        ]
+    }
+}
+
+2. /**
+ * Record Returns
+ * POST /api/issuance/ISS001/return
+ */
+Request:
+{
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "inventoryId": "INV001",
+            "usedQuantity": 80,
+            "returnedQuantity": 20,
+            "batchNumber": "BATCH001"
+        },
+        {
+            "explosiveTypeId": "EXP002",
+            "inventoryId": "INV002",
+            "usedQuantity": 180,
+            "returnedQuantity": 20,
+            "batchNumber": "BATCH002"
+        }
+    ],
+    "remarks": "End of day return"
+}
+Response:
+{
+    "status": "success",
+    "data": {
+        "IssuanceID": "ISS001",
+        "Status": "PartiallyReturned",
+        "ReturnDate": "2024-01-22T17:00:00Z",
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator"
+                },
+                "IssuedQuantity": 100,
+                "UsedQuantity": 80,
+                "ReturnedQuantity": 20,
+                "BatchNumber": "BATCH001"
+            },
+            {
+                "ExplosiveType": {
+                    "TypeName": "Ammonium Nitrate"
+                },
+                "IssuedQuantity": 200,
+                "UsedQuantity": 180,
+                "ReturnedQuantity": 20,
+                "BatchNumber": "BATCH002"
+            }
+        ]
+    }
+}
+
+3. /**
+ * Get Issuance Details
+ * GET /api/issuance/ISS001
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "IssuanceID": "ISS001",
+        "StoreID": "STR001",
+        "Status": "PartiallyReturned",
+        "Purpose": "Daily blasting operation",
+        "IssuanceDate": "2024-01-22T08:00:00Z",
+        "ReturnDate": "2024-01-22T17:00:00Z",
+        "IssuedBy": {
+            "UserId": 1,
+            "Name": "John Doe"
+        },
+        "Store": {
+            "StoreName": "Main Store"
+        },
+        "Items": [
+            {
+                "ExplosiveType": {
+                    "TypeName": "Electrical Detonator",
+                    "UnitOfMeasurement": "Units"
+                },
+                "IssuedQuantity": 100,
+                "UsedQuantity": 80,
+                "ReturnedQuantity": 20,
+                "BatchNumber": "BATCH001"
+            },
+            {
+                "ExplosiveType": {
+                    "TypeName": "Ammonium Nitrate",
+                    "UnitOfMeasurement": "KG"
+                },
+                "IssuedQuantity": 200,
+                "UsedQuantity": 180,
+                "ReturnedQuantity": 20,
+                "BatchNumber": "BATCH002"
+            }
+        ]
+    }
+}
+
+4. /**
+ * Get Store Issuances
+ * GET /api/issuance/store/STR001?status=Active&startDate=2024-01-01&endDate=2024-01-31
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "issuances": [
+            {
+                "IssuanceID": "ISS001",
+                "Status": "PartiallyReturned",
+                "Purpose": "Daily blasting operation",
+                "IssuanceDate": "2024-01-22T08:00:00Z",
+                "ReturnDate": "2024-01-22T17:00:00Z",
+                "IssuedBy": {
+                    "Name": "John Doe"
+                },
+                "Items": [
+                    {
+                        "ExplosiveType": {
+                            "TypeName": "Electrical Detonator"
+                        },
+                        "IssuedQuantity": 100,
+                        "UsedQuantity": 80,
+                        "ReturnedQuantity": 20
+                    }
+                ]
+            }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "totalPages": 1
+    }
+}
+
+5. /**
+ * Get Issuance Report
+ * GET /api/issuance/store/STR001/report?startDate=2024-01-01&endDate=2024-01-31
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "reportPeriod": {
+            "from": "2024-01-01",
+            "to": "2024-01-31"
+        },
+        "summary": {
+            "totalIssuances": 10,
+            "completedIssuances": 8,
+            "pendingReturns": 2,
+            "explosiveUsage": [
+                {
+                    "explosiveType": "Electrical Detonator",
+                    "totalIssued": 1000,
+                    "totalUsed": 850,
+                    "totalReturned": 150
+                },
+                {
+                    "explosiveType": "Ammonium Nitrate",
+                    "totalIssued": 2000,
+                    "totalUsed": 1800,
+                    "totalReturned": 200
+                }
+            ]
+        },
+        "dailyUsage": [
+            {
+                "date": "2024-01-22",
+                "issuances": 1,
+                "returns": 1,
+                "usageDetails": [/* Daily breakdown */]
+            }
+        ]
+    }
+}
+```
+
+Error Responses:
+```javascript
+// Insufficient Stock
+{
+    "status": "error",
+    "message": "Insufficient quantity available",
+    "details": {
+        "explosiveType": "Electrical Detonator",
+        "requested": 100,
+        "available": 50
+    }
+}
+
+// Invalid Return Quantity
+{
+    "status": "error",
+    "message": "Return quantity exceeds issued quantity",
+    "details": {
+        "issuedQuantity": 100,
+        "attemptedReturn": 120
+    }
+}
+```
+
+Would you like me to:
+1. Add more error scenarios?
+2. Show validation rules?
+3. Show the next set of APIs?
+4. Show integration with inventory tracking?
+
+
+I'll provide both Explosive Controller and Explosive Dealer APIs with sample data:
+
+**1. Explosive Controller APIs:**
+```javascript
+1. /**
+ * Get Pending Permits for Approval
+ * GET /api/explosive-controllers/permits/pending
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "pendingPermits": [{
+            "PermitID": "PER001",
+            "MiningSite": {
+                "SiteName": "Mining Site A",
+                "Location": "Location A"
+            },
+            "RequestDate": "2024-01-22T09:00:00Z",
+            "Purpose": "Regular mining operations",
+            "ExplosiveTypes": [
+                {
+                    "TypeName": "Electrical Detonator",
+                    "RequestedQuantity": 5000,
+                    "Unit": "Units"
+                }
+            ]
+        }]
+    }
+}
+
+2. /**
+ * Approve/Reject Permit
+ * PATCH /api/explosive-controllers/permits/PER001/status
+ */
+Request:
+{
+    "status": "Approved",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "approvedQuantity": 4500,
+            "remarks": "Approved with reduced quantity"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "message": "Permit approved successfully",
+    "data": {
+        "PermitID": "PER001",
+        "Status": "Approved",
+        "ApprovalDate": "2024-01-22T10:00:00Z"
+    }
+}
+
+3. /**
+ * Get Pending Quotas
+ * GET /api/explosive-controllers/quotas/pending
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "pendingQuotas": [{
+            "QuotaID": "QTA001",
+            "Permit": {
+                "PermitID": "PER001",
+                "MiningSite": {
+                    "SiteName": "Mining Site A"
+                }
+            },
+            "RequestDate": "2024-01-22T09:00:00Z",
+            "PlannedUsageDate": "2024-01-25",
+            "Items": [
+                {
+                    "ExplosiveType": "Electrical Detonator",
+                    "RequestedQuantity": 500,
+                    "RemainingInPermit": 4000
+                }
+            ]
+        }]
+    }
+}
+
+4. /**
+ * Generate Controller Report
+ * GET /api/explosive-controllers/reports/district/:districtId
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "district": "District A",
+        "period": "January 2024",
+        "statistics": {
+            "totalPermits": 10,
+            "approvedPermits": 8,
+            "rejectedPermits": 2,
+            "totalQuotas": 20,
+            "explosiveAllocation": [
+                {
+                    "type": "Electrical Detonator",
+                    "totalApproved": 50000,
+                    "totalUsed": 30000
+                }
+            ]
+        }
+    }
+}
+```
+
+**2. Explosive Dealer APIs:**
+```javascript
+1. /**
+ * Get Pending Orders
+ * GET /api/explosive-dealers/orders/pending
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "pendingOrders": [{
+            "PurchaseID": "PUR001",
+            "Store": {
+                "StoreName": "Main Store",
+                "Location": "Location A"
+            },
+            "OrderDate": "2024-01-22T11:00:00Z",
+            "TotalAmount": 100000.00,
+            "Items": [
+                {
+                    "ExplosiveType": "Electrical Detonator",
+                    "Quantity": 500,
+                    "UnitPrice": 100.00
+                }
+            ]
+        }]
+    }
+}
+
+2. /**
+ * Confirm Order
+ * PATCH /api/explosive-dealers/orders/PUR001/confirm
+ */
+Request:
+{
+    "status": "Confirmed",
+    "receiptNumber": "REC001",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "batchNumber": "BATCH001",
+            "manufactureDate": "2024-01-01",
+            "expiryDate": "2025-01-01"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "message": "Order confirmed successfully",
+    "data": {
+        "PurchaseID": "PUR001",
+        "Status": "Confirmed",
+        "ConfirmationDate": "2024-01-22T12:00:00Z"
+    }
+}
+
+3. /**
+ * Record Delivery
+ * POST /api/explosive-dealers/deliveries
+ */
+Request:
+{
+    "purchaseId": "PUR001",
+    "deliveryDate": "2024-01-23T10:00:00Z",
+    "items": [
+        {
+            "explosiveTypeId": "EXP001",
+            "quantity": 500,
+            "batchNumber": "BATCH001"
+        }
+    ]
+}
+Response:
+{
+    "status": "success",
+    "message": "Delivery recorded successfully",
+    "data": {
+        "PurchaseID": "PUR001",
+        "Status": "Delivered",
+        "DeliveryDate": "2024-01-23T10:00:00Z"
+    }
+}
+
+4. /**
+ * Get Sales Report
+ * GET /api/explosive-dealers/reports/sales
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "period": "January 2024",
+        "summary": {
+            "totalOrders": 15,
+            "completedOrders": 12,
+            "pendingOrders": 3,
+            "totalRevenue": 1500000.00,
+            "salesByExplosive": [
+                {
+                    "type": "Electrical Detonator",
+                    "quantity": 5000,
+                    "revenue": 500000.00
+                }
+            ],
+            "salesByCustomer": [
+                {
+                    "miningSite": "Mining Site A",
+                    "orders": 5,
+                    "revenue": 600000.00
+                }
+            ]
+        },
+        "dailySales": [
+            {
+                "date": "2024-01-22",
+                "orders": 2,
+                "revenue": 200000.00
+            }
+        ]
+    }
+}
+
+5. /**
+ * Get Stock Status
+ * GET /api/explosive-dealers/stock
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "stockStatus": [
+            {
+                "explosiveType": "Electrical Detonator",
+                "totalStock": 10000,
+                "allocated": 2000,
+                "available": 8000,
+                "batches": [
+                    {
+                        "batchNumber": "BATCH001",
+                        "quantity": 5000,
+                        "manufactureDate": "2024-01-01",
+                        "expiryDate": "2025-01-01"
+                    }
+                ]
+            }
+        ],
+        "lowStockAlerts": [
+            {
+                "explosiveType": "Ammonium Nitrate",
+                "currentStock": 1000,
+                "minimumRequired": 2000
+            }
+        ]
+    }
+}
+```
+
+Would you like me to:
+1. Show more specific APIs?
+2. Add validation rules?
+3. Show error scenarios?
+4. Show the integration points between controllers and dealers?
+
+Here are the complete User Management APIs with sample data:
+
+1. **User Registration & Authentication:**
+```javascript
+/**
+ * Register New User
+ * POST /api/users/register
+ */
+Request:
+{
+    "username": "john.doe",
+    "email": "john.doe@example.com",
+    "password": "securePassword123",
+    "role": "ROLE_SITE_ENGINEER",
+    "details": {
+        "name": "John Doe",
+        "nic": "123456789V",
+        "contactNumber": "1234567890",
+        "address": "Address details",
+        "miningSiteId": "SITE001"  // For site engineer
+        // or "district": "District A"  // For controller
+        // or "dealerId": "DEAL001"    // For dealer
+    }
+}
+Response:
+{
+    "status": "success",
+    "message": "User registered successfully. Pending admin approval",
+    "data": {
+        "userId": 1,
+        "username": "john.doe",
+        "email": "john.doe@example.com",
+        "role": "ROLE_SITE_ENGINEER",
+        "status": false  // Pending approval
+    }
+}
+
+/**
+ * Admin Approve User
+ * PATCH /api/users/:userId/status
+ */
+Request:
+{
+    "status": true,
+    "remarks": "Approved after verification"
+}
+Response:
+{
+    "status": "success",
+    "message": "User approved successfully",
+    "data": {
+        "userId": 1,
+        "status": true,
+        "approvedAt": "2024-01-23T10:00:00Z"
+    }
+}
+```
+
+2. **User Management:**
+```javascript
+/**
+ * Get All Users (Admin)
+ * GET /api/users?role=ROLE_SITE_ENGINEER&status=true&page=1&limit=10
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "users": [{
+            "userId": 1,
+            "username": "john.doe",
+            "email": "john.doe@example.com",
+            "role": "ROLE_SITE_ENGINEER",
+            "status": true,
+            "lastLogin": "2024-01-23T09:00:00Z",
+            "createdAt": "2024-01-20T10:00:00Z",
+            "details": {
+                "name": "John Doe",
+                "miningSite": {
+                    "siteId": "SITE001",
+                    "siteName": "Mining Site A"
+                }
+            }
+        }],
+        "totalCount": 25,
+        "page": 1,
+        "totalPages": 3
+    }
+}
+
+/**
+ * Get User Details
+ * GET /api/users/:userId
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "userId": 1,
+        "username": "john.doe",
+        "email": "john.doe@example.com",
+        "role": "ROLE_SITE_ENGINEER",
+        "status": true,
+        "details": {
+            "name": "John Doe",
+            "nic": "123456789V",
+            "contactNumber": "1234567890",
+            "address": "Address details",
+            "miningSite": {
+                "siteId": "SITE001",
+                "siteName": "Mining Site A"
+            }
+        },
+        "lastLogin": "2024-01-23T09:00:00Z",
+        "activityLog": [
+            {
+                "action": "LOGIN",
+                "timestamp": "2024-01-23T09:00:00Z",
+                "ipAddress": "192.168.1.1"
+            }
+        ]
+    }
+}
+```
+
+3. **User Profile Management:**
+```javascript
+/**
+ * Update User Profile
+ * PUT /api/users/profile
+ */
+Request:
+{
+    "contactNumber": "0987654321",
+    "address": "Updated address",
+    "email": "john.new@example.com"
+}
+Response:
+{
+    "status": "success",
+    "message": "Profile updated successfully",
+    "data": {
+        "userId": 1,
+        "email": "john.new@example.com",
+        "details": {
+            "contactNumber": "0987654321",
+            "address": "Updated address"
+        },
+        "updatedAt": "2024-01-23T11:00:00Z"
+    }
+}
+
+/**
+ * Change Password
+ * PUT /api/users/password
+ */
+Request:
+{
+    "currentPassword": "oldPassword123",
+    "newPassword": "newPassword123"
+}
+Response:
+{
+    "status": "success",
+    "message": "Password changed successfully"
+}
+```
+
+4. **User Activity & Security:**
+```javascript
+/**
+ * Get User Activity Log
+ * GET /api/users/:userId/activity
+ */
+Response:
+{
+    "status": "success",
+    "data": {
+        "activities": [
+            {
+                "action": "LOGIN",
+                "timestamp": "2024-01-23T09:00:00Z",
+                "ipAddress": "192.168.1.1",
+                "deviceInfo": "Chrome/Windows"
+            },
+            {
+                "action": "PASSWORD_CHANGE",
+                "timestamp": "2024-01-23T11:00:00Z",
+                "ipAddress": "192.168.1.1"
+            }
+        ]
+    }
+}
+
+/**
+ * Reset User Password (Admin)
+ * POST /api/users/:userId/reset-password
+ */
+Response:
+{
+    "status": "success",
+    "message": "Password reset email sent",
+    "data": {
+        "resetToken": "token123",
+        "expiresAt": "2024-01-23T12:00:00Z"
+    }
+}
+```
+
+5. **Error Responses:**
+```javascript
+// Invalid Credentials
+{
+    "status": "error",
+    "message": "Invalid username or password",
+    "code": "AUTH_001"
+}
+
+// Duplicate Email
+{
+    "status": "error",
+    "message": "Email already registered",
+    "code": "USER_001"
+}
+
+// Invalid Role Assignment
+{
+    "status": "error",
+    "message": "Cannot assign site engineer role without mining site",
+    "code": "ROLE_001"
+}
+
+// Account Locked
+{
+    "status": "error",
+    "message": "Account locked due to multiple failed attempts",
+    "code": "AUTH_002",
+    "details": {
+        "lockedUntil": "2024-01-23T12:00:00Z",
+        "remainingAttempts": 0
+    }
+}
+```
+
+Would you like me to:
+1. Add more specific API endpoints?
+2. Show validation rules?
+3. Add more security features?
+4. Show role-based access controls?

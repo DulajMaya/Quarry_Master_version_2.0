@@ -1,0 +1,97 @@
+# QuaryMaster API Documentation
+
+## Test Blast Management
+### Test Blast Details
+```
+POST   /api/test-blasts/details              - Create new test blast details
+GET    /api/test-blasts/details/:id          - Get test blast details
+PATCH  /api/test-blasts/details/:id/approval - Update approval status
+```
+
+### Test Blast Operations
+```
+POST   /api/test-blasts/blast                - Create new test blast
+GET    /api/test-blasts/blast/:blastId       - Get specific test blast
+POST   /api/test-blasts/blast/hole           - Create test blast hole details
+GET    /api/test-blasts/blast/:blastId/monitoring - Get blast monitoring data
+GET    /api/test-blasts/blast/:blastId/sketch    - Download blast sketch
+```
+
+### Test Blast Queries
+```
+GET    /api/test-blasts/license/:licenseId/blasts - Get blasts by license
+GET    /api/test-blasts/site/:siteId/blasts      - Get blasts by site
+```
+
+## Mining Site Management
+### Site Operations
+```
+POST   /api/mining-sites                    - Create new mining site
+PUT    /api/mining-sites/:siteId           - Update site details
+GET    /api/mining-sites/:siteId           - Get site details
+GET    /api/mining-sites/:siteId/details   - Get site with full details
+```
+
+### Site Queries
+```
+GET    /api/mining-sites/license/:licenseId/sites - Get sites by license
+GET    /api/mining-sites/search            - Search sites
+PATCH  /api/mining-sites/:siteId/deactivate - Deactivate site
+```
+
+### Site Analytics
+```
+GET    /api/mining-sites/:siteId/statistics - Get site statistics
+GET    /api/mining-sites/:siteId/validate   - Validate site operation
+```
+
+## GSMB Officer Management
+### Officer Operations
+```
+POST   /api/gsmb-officers                   - Create new officer
+PUT    /api/gsmb-officers/:officerId        - Update officer details
+GET    /api/gsmb-officers/:officerId        - Get officer details
+GET    /api/gsmb-officers                   - Get all active officers
+```
+
+### Officer Related Operations
+```
+GET    /api/gsmb-officers/:officerId/test-blasts - Get officer's test blasts
+PATCH  /api/gsmb-officers/:officerId/deactivate  - Deactivate officer
+GET    /api/gsmb-officers/search                 - Search officers
+```
+
+## Monitoring Location Management
+### Location Operations
+```
+POST   /api/monitoring-locations                 - Create new location
+POST   /api/monitoring-locations/bulk            - Bulk create locations
+PUT    /api/monitoring-locations/:locationId     - Update location
+GET    /api/monitoring-locations/:locationId     - Get location details
+```
+
+### Location Queries
+```
+GET    /api/monitoring-locations/site/:siteId/locations - Get locations by site
+GET    /api/monitoring-locations/:locationId/history    - Get monitoring history
+PATCH  /api/monitoring-locations/:locationId/deactivate - Deactivate location
+```
+
+### Location Analytics
+```
+GET    /api/monitoring-locations/by-distance          - Get locations by distance
+GET    /api/monitoring-locations/:locationId/statistics - Get monitoring stats
+```
+
+## Common Authentication Requirements
+- All routes require valid JWT token in Authorization header
+- Role-based access control implemented for sensitive operations
+
+## Role Access Levels
+```
+Admin: Full access to all endpoints
+License Officer: Access to site and license management
+Mining Engineer: Access to test blast and monitoring operations
+GSMB Officer: Access to monitoring and approval operations
+```
+

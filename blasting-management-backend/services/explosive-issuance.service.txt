@@ -1,0 +1,362 @@
+// services/explosive-issuance.service.js
+const { Op } = require('sequelize');
+const sequelize = require('../config/db.config');
+const { 
+    ExplosiveIssuance, 
+    ExplosiveIssuanceItem, 
+    BlastEventExplosive,
+    ExplosiveType,
+    DailyBlastOperation
+} = require('../models');
+
+class ExplosiveIssuanceService {
+    async createIssuance(data, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            // Validate daily blast operation
+            const dailyBlast = await this._validateDailyBlastOperation(data.dailyBlastId, userId);
+
+            // Check for existing active issuance
+            const existingIssuance = await this._checkExistingIssuance(data.dailyBlastId);
+            if (existingIssuance) {
+                throw {
+                    status: 400,
+                    message: 'Active issuance already exists for this blast operation',
+                    details: {
+                        existingIssuanceId: existingIssuance.issuance_id,
+                        status: existingIssuance.status
+                    }
+                };
+            }
+
+            const issuance = await ExplosiveIssuance.create({
+                ...data,
+                created_by: userId
+            }, { transaction });
+
+            // Create issuance items with validation
+            const items = await this._createIssuanceItems(data.items, issuance.issuance_id, transaction);
+
+            await transaction.commit();
+
+            // Return detailed response for UI
+            return {
+                issuance: await this.getIssuanceDetails(issuance.issuance_id),
+                items: items,
+                validations: {
+                    inventoryChecks: items.map(item => ({
+                        explosiveType: item.explosive_type_id,
+                        available: item.availableQuantity,
+                        requested: item.quantity_issued,
+                        isValid: item.availableQuantity >= item.quantity_issued
+                    }))
+                }
+            };
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
+
+    async calculateUsage(issuanceId) {
+        // Get all blast events for this issuance's daily operation
+        const issuance = await ExplosiveIssuance.findByPk(issuanceId, {
+            include: [
+                { model: ExplosiveIssuanceItem },
+                { model: DailyBlastOperation }
+            ]
+        });
+
+        if (!issuance) {
+            throw { status: 404, message: 'Issuance not found' };
+        }
+
+        // Get total used quantities from blast events
+        const usedQuantities = await BlastEventExplosive.findAll({
+            where: {
+                blast_id: {
+                    [Op.in]: sequelize.literal(`
+                        SELECT blast_id FROM blast_events 
+                        WHERE daily_blast_id = '${issuance.daily_blast_id}'
+                    `)
+                }
+            },
+            attributes: [
+                'explosive_type_id',
+                [sequelize.fn('SUM', sequelize.col('quantity_used')), 'total_used']
+            ],
+            group: ['explosive_type_id']
+        });
+
+        // Calculate and return detailed usage information
+        return this._prepareUsageResponse(issuance, usedQuantities);
+    }
+
+    async _prepareUsageResponse(issuance, usedQuantities) {
+        const usageDetails = [];
+
+        for (const item of issuance.ExplosiveIssuanceItems) {
+            const usage = usedQuantities.find(u => u.explosive_type_id === item.explosive_type_id);
+            const usedAmount = usage ? Number(usage.getDataValue('total_used')) : 0;
+
+            usageDetails.push({
+                explosive_type_id: item.explosive_type_id,
+                quantity_issued: Number(item.quantity_issued),
+                quantity_used: usedAmount,
+                quantity_returned: Number(item.quantity_returned),
+                quantity_remaining: Number(item.quantity_issued) - usedAmount - Number(item.quantity_returned),
+                status: this._calculateItemStatus(item, usedAmount),
+                needs_reconciliation: this._needsReconciliation(item, usedAmount),
+                reconciliation_details: this._getReconciliationDetails(item, usedAmount)
+            });
+        }
+
+        return {
+            issuance_id: issuance.issuance_id,
+            daily_blast_id: issuance.daily_blast_id,
+            status: issuance.status,
+            details: usageDetails,
+            summary: {
+                total_types: usageDetails.length,
+                types_needing_attention: usageDetails.filter(d => d.needs_reconciliation).length,
+                completion_percentage: this._calculateCompletionPercentage(usageDetails)
+            }
+        };
+    }
+
+    
+    async processReturn(issuanceId, returnData, userId) {
+        const transaction = await sequelize.transaction();
+        try {
+            // Get current issuance status with usage calculations
+            const currentStatus = await this.calculateUsage(issuanceId);
+            if (!currentStatus) {
+                throw { status: 404, message: 'Issuance not found' };
+            }
+
+            // Validate issuance status
+            if (!['ISSUED', 'IN_USE', 'PENDING_RETURN'].includes(currentStatus.status)) {
+                throw { 
+                    status: 400, 
+                    message: 'Invalid issuance status for return',
+                    details: {
+                        currentStatus: currentStatus.status,
+                        allowedStatuses: ['ISSUED', 'IN_USE', 'PENDING_RETURN']
+                    }
+                };
+            }
+
+            const reconciliationResults = [];
+
+            for (const returnItem of returnData.items) {
+                const currentDetail = currentStatus.details.find(
+                    d => d.explosive_type_id === returnItem.explosive_type_id
+                );
+
+                if (!currentDetail) {
+                    throw { 
+                        status: 400, 
+                        message: `Invalid explosive type: ${returnItem.explosive_type_id}` 
+                    };
+                }
+
+                // Validate and process return quantities
+                const validation = this._validateReturnQuantities(
+                    currentDetail,
+                    returnItem
+                );
+
+                if (!validation.isValid) {
+                    throw {
+                        status: 400,
+                        message: 'Invalid return quantities',
+                        details: validation.errors
+                    };
+                }
+
+                // Update issuance item
+                await ExplosiveIssuanceItem.update({
+                    quantity_returned: returnItem.return_quantity,
+                    quantity_damaged: returnItem.damaged_quantity || 0,
+                    quantity_wasted: returnItem.wasted_quantity || 0,
+                    damage_reason: returnItem.damage_reason,
+                    waste_reason: returnItem.waste_reason,
+                    reconciliation_status: validation.isBalanced ? 'BALANCED' : 'UNBALANCED',
+                    last_calculation_time: new Date()
+                }, {
+                    where: { 
+                        issuance_id: issuanceId,
+                        explosive_type_id: returnItem.explosive_type_id
+                    },
+                    transaction
+                });
+
+                // If there's a return quantity, create inventory movement
+                if (returnItem.return_quantity > 0) {
+                    await this.storeInventoryService.updateInventory(
+                        returnItem.explosive_type_id,
+                        returnItem.return_quantity,
+                        'IN',
+                        {
+                            type: 'Return',
+                            id: issuanceId,
+                            remarks: returnData.remarks
+                        },
+                        userId,
+                        transaction
+                    );
+                }
+
+                reconciliationResults.push({
+                    explosive_type_id: returnItem.explosive_type_id,
+                    is_balanced: validation.isBalanced,
+                    details: validation.details
+                });
+            }
+
+            // Update issuance status based on reconciliation
+            const allBalanced = reconciliationResults.every(r => r.is_balanced);
+            const newStatus = allBalanced ? 'COMPLETED' : 'PARTIALLY_RETURNED';
+
+            await ExplosiveIssuance.update({
+                status: newStatus,
+                completion_date: allBalanced ? new Date() : null
+            }, {
+                where: { issuance_id: issuanceId },
+                transaction
+            });
+
+            await transaction.commit();
+
+            // Return detailed response for UI
+            return {
+                issuance_id: issuanceId,
+                new_status: newStatus,
+                reconciliation_results: reconciliationResults,
+                completion_details: {
+                    is_completed: allBalanced,
+                    remaining_items: reconciliationResults.filter(r => !r.is_balanced).length,
+                    next_steps: allBalanced ? [] : ['Complete reconciliation for remaining items']
+                }
+            };
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
+
+    _validateReturnQuantities(currentDetail, returnItem) {
+        const validation = {
+            isValid: true,
+            isBalanced: false,
+            errors: [],
+            details: {}
+        };
+
+        const totalToAccount = Number(currentDetail.quantity_issued);
+        const used = Number(currentDetail.quantity_used);
+        const returning = Number(returnItem.return_quantity || 0);
+        const damaged = Number(returnItem.damaged_quantity || 0);
+        const wasted = Number(returnItem.wasted_quantity || 0);
+
+        const totalAccounted = used + returning + damaged + wasted;
+
+        validation.details = {
+            issued: totalToAccount,
+            used,
+            returning,
+            damaged,
+            wasted,
+            total_accounted: totalAccounted,
+            difference: totalToAccount - totalAccounted
+        };
+
+        // Validate return quantity doesn't exceed remaining
+        const maxReturn = totalToAccount - used - damaged - wasted;
+        if (returning > maxReturn) {
+            validation.isValid = false;
+            validation.errors.push({
+                type: 'EXCESS_RETURN',
+                message: `Return quantity exceeds available amount. Maximum possible return: ${maxReturn}`,
+                details: validation.details
+            });
+        }
+
+        // Check if quantities balance
+        if (Math.abs(totalToAccount - totalAccounted) > 0.01) {
+            if (damaged === 0 && wasted === 0) {
+                validation.errors.push({
+                    type: 'UNACCOUNTED_QUANTITY',
+                    message: 'There are unaccounted quantities. Please specify damaged or wasted amounts if applicable.',
+                    unaccounted: totalToAccount - totalAccounted
+                });
+            }
+        } else {
+            validation.isBalanced = true;
+        }
+
+        return validation;
+    }
+
+    async getReconciliationSummary(issuanceId) {
+        const issuance = await this.getIssuanceDetails(issuanceId);
+        const usageData = await this.calculateUsage(issuanceId);
+
+        const summary = {
+            issuance_id: issuanceId,
+            status: issuance.status,
+            date: issuance.issuance_date,
+            items: [],
+            totals: {
+                issued: 0,
+                used: 0,
+                returned: 0,
+                damaged: 0,
+                wasted: 0,
+                unaccounted: 0
+            }
+        };
+
+        for (const item of issuance.ExplosiveIssuanceItems) {
+            const usage = usageData.details.find(d => d.explosive_type_id === item.explosive_type_id);
+            const itemSummary = {
+                explosive_type_id: item.explosive_type_id,
+                explosive_type_name: item.ExplosiveType.TypeName,
+                quantities: {
+                    issued: Number(item.quantity_issued),
+                    used: usage ? Number(usage.quantity_used) : 0,
+                    returned: Number(item.quantity_returned),
+                    damaged: Number(item.quantity_damaged),
+                    wasted: Number(item.quantity_wasted)
+                }
+            };
+
+            itemSummary.quantities.unaccounted = 
+                itemSummary.quantities.issued - 
+                (itemSummary.quantities.used + 
+                 itemSummary.quantities.returned + 
+                 itemSummary.quantities.damaged + 
+                 itemSummary.quantities.wasted);
+
+            // Update totals
+            Object.keys(itemSummary.quantities).forEach(key => {
+                summary.totals[key] += itemSummary.quantities[key];
+            });
+
+            summary.items.push(itemSummary);
+        }
+
+        summary.completion_status = {
+            is_complete: summary.totals.unaccounted === 0,
+            percentage_reconciled: ((summary.totals.used + summary.totals.returned + 
+                                   summary.totals.damaged + summary.totals.wasted) / 
+                                   summary.totals.issued * 100).toFixed(2)
+        };
+
+        return summary;
+    }
+}
+
+module.exports = new ExplosiveIssuanceService();

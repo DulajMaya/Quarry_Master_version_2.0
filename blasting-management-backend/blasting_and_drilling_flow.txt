@@ -1,0 +1,65 @@
+20/12/2024
+
+# Create models
+New-Item -Path "models/drilling-site.model.js"
+New-Item -Path "models/drilling-pattern.model.js"
+New-Item -Path "models/drill-hole.model.js"
+New-Item -Path "models/blast-event.model.js"
+New-Item -Path "models/blast-hole.model.js"
+New-Item -Path "models/blast-results.model.js"
+
+# Create routes
+New-Item -Path "routes/drilling-site.routes.js"
+New-Item -Path "routes/drilling-pattern.routes.js"
+New-Item -Path "routes/drill-hole.routes.js"
+New-Item -Path "routes/blast-event.routes.js"
+New-Item -Path "routes/blast-hole.routes.js"
+New-Item -Path "routes/blast-results.routes.js"
+
+# Create controllers
+New-Item -Path "controllers/drilling-site.controller.js"
+New-Item -Path "controllers/drilling-pattern.controller.js"
+New-Item -Path "controllers/drill-hole.controller.js"
+New-Item -Path "controllers/blast-event.controller.js"
+New-Item -Path "controllers/blast-hole.controller.js"
+New-Item -Path "controllers/blast-results.controller.js"
+
+# Create services
+New-Item -Path "services/drilling-site.service.js"
+New-Item -Path "services/drilling-pattern.service.js"
+New-Item -Path "services/drill-hole.service.js"
+New-Item -Path "services/blast-event.service.js"
+New-Item -Path "services/blast-hole.service.js"
+New-Item -Path "services/blast-results.service.js"
+
+# Create validators
+New-Item -Path "utils/drilling-validation.js"
+New-Item -Path "utils/blasting-validation.js"
+New-Item -Path "utils/explosives-calculation.js"
+
+# Create upload directories
+New-Item -Path "uploads/blast-patterns" -ItemType Directory
+New-Item -Path "uploads/delay-patterns" -ItemType Directory
+
+
+
+
+# Create service files
+New-Item -Path "services/drilling-site.service.js"
+New-Item -Path "services/drilling-pattern.service.js"
+New-Item -Path "services/drill-hole.service.js"
+New-Item -Path "services/daily-blast-operation.service.js"
+New-Item -Path "services/daily-blast-explosive.service.js"
+New-Item -Path "services/blast-event.service.js"
+New-Item -Path "services/blast-hole.service.js"
+New-Item -Path "services/blast-result.service.js"
+
+# Create controller files
+New-Item -Path "controllers/drilling-site.controller.js"
+New-Item -Path "controllers/drilling-pattern.controller.js"
+New-Item -Path "controllers/drill-hole.controller.js"
+New-Item -Path "controllers/daily-blast-operation.controller.js"
+New-Item -Path "controllers/daily-blast-explosive.controller.js"
+New-Item -Path "controllers/blast-event.controller.js"
+New-Item -Path "controllers/blast-hole.controller.js"
+New-Item -Path "controllers/blast-result.controller.js"

@@ -1,0 +1,92 @@
+-
+├── config/
+│   └── db.config.js
+├── controllers/
+│   └── auth.controller.js
+├── middleware/
+│   ├── auth.middleware.js
+│   └── role.middleware.js
+├── models/
+│   ├── index.js
+│   ├── user.model.js
+│   └── role.model.js
+├── routes/
+│   └── auth.routes.js
+├── services/
+│   └── auth.service.js
+├── utils/
+│   └── response.js
+    |__ validateInput.js
+├── .env
+├── app.js
+└── server.js
+mkdir -p -{config,controllers,middleware,models,routes,services,utils}
+touch config/db.config.js \
+      controllers/auth.controller.js \
+      middleware/auth.middleware.js \
+      middleware/role.middleware.js \
+      models/index.js \
+      models/user.model.js \
+      models/role.model.js \
+      routes/auth.routes.js \
+      services/auth.service.js \
+      utils/response.js \
+      .env \
+      app.js \
+      server.js
+
+
+      {"username" : "admin"
+      "password" : "12345"}
+
+      {"username" : "user1"
+      "password" : "123456789"
+      "email" : "user1.gmail.com"}
+
+
+      cli command
+      # Create new model files
+New-Item -Path "models" -Name "mining-site.model.js" -ItemType "file"
+New-Item -Path "models" -Name "test-blast-details.model.js" -ItemType "file"
+New-Item -Path "models" -Name "test-blast.model.js" -ItemType "file"
+New-Item -Path "models" -Name "test-blast-hole.model.js" -ItemType "file"
+New-Item -Path "models" -Name "monitoring-location.model.js" -ItemType "file"
+New-Item -Path "models" -Name "gsmb-officer.model.js" -ItemType "file"
+New-Item -Path "models" -Name "test-blast-monitoring.model.js" -ItemType "file"
+
+# Create new controller files
+New-Item -Path "controllers" -Name "mining-site.controller.js" -ItemType "file"
+New-Item -Path "controllers" -Name "test-blast.controller.js" -ItemType "file"
+New-Item -Path "controllers" -Name "monitoring-location.controller.js" -ItemType "file"
+New-Item -Path "controllers" -Name "gsmb-officer.controller.js" -ItemType "file"
+
+# Create new service files
+New-Item -Path "services" -Name "mining-site.service.js" -ItemType "file"
+New-Item -Path "services" -Name "test-blast.service.js" -ItemType "file"
+New-Item -Path "services" -Name "monitoring-location.service.js" -ItemType "file"
+New-Item -Path "services" -Name "gsmb-officer.service.js" -ItemType "file"
+New-Item -Path "services" -Name "coordinate-conversion.service.js" -ItemType "file"
+
+# Create new route files
+New-Item -Path "routes" -Name "mining-site.routes.js" -ItemType "file"
+New-Item -Path "routes" -Name "test-blast.routes.js" -ItemType "file"
+New-Item -Path "routes" -Name "monitoring-location.routes.js" -ItemType "file"
+New-Item -Path "routes" -Name "gsmb-officer.routes.js" -ItemType "file"
+
+# Create new validation files
+New-Item -Path "utils" -Name "test-blast.validator.js" -ItemType "file"
+New-Item -Path "utils" -Name "coordinate.validator.js" -ItemType "file"
+
+# Create new upload folders
+New-Item -Path "uploads" -Name "blast-sketches" -ItemType "directory"
+New-Item -Path "uploads" -Name "monitoring-reports" -ItemType "directory"
+
+npm install proj4 # For coordinate conversion
+npm install multer # For file uploads
+npm install joi # For validation
+npm install moment # For date handling
+npm install uuid # For generating unique identifiers
+npm install express-rate-limit # For API rate limiting
+npm install helmet # For security headers
+npm install compression # For response compression
+npm install cors # For CORS handling

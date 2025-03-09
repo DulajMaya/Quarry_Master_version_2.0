@@ -1,0 +1,166 @@
+1. Create New Test Blast Details
+```
+POST /api/test-blasts/details
+Headers:
+{
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your_jwt_token"
+}
+
+Request Body:
+{
+    "site_id": 1,
+    "license_id": 1,
+    "blast_date": "2024-03-20",
+    "number_of_blasts": 3,
+    "approval_comments": "Initial test blast for new quarry site"
+}
+```
+
+2. Create New Test Blast
+```
+POST /api/test-blasts/blast
+Headers:
+{
+    "Content-Type": "multipart/form-data",
+    "Authorization": "Bearer your_jwt_token"
+}
+
+// For form-data include file with key "holes_sketch"
+Request Body:
+{
+    "test_blast_details_id": 1,
+    "gsmb_officer_id": 1,
+    "kadawala_gps_north": 237845.123,
+    "kadawala_gps_east": 176234.567,
+    "time_fired": "14:30:00",
+    "number_of_holes": 5,
+    "number_of_rows": 2,
+    "holes_sketch": [file] // Optional file upload
+}
+```
+
+3. Create New Mining Site
+```
+POST /api/mining-sites
+Headers:
+{
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your_jwt_token"
+}
+
+Request Body:
+{
+    "license_id": 1,
+    "site_name": "Kapugala Quarry Site",
+    "site_address": "123 Quarry Road, Kapugala, Colombo",
+    "site_district": "Colombo",
+    "site_mining_engineer": "John Doe",
+    "site_kadawala_gps_north": 237845.123,
+    "site_kadawala_gps_east": 176234.567
+}
+```
+
+4. Create New GSMB Officer
+```
+POST /api/gsmb-officers
+Headers:
+{
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your_jwt_token"
+}
+
+Request Body:
+{
+    "name": "Saman Perera",
+    "telephone_number": "+94771234567",
+    "email_address": "saman.perera@gsmb.gov.lk"
+}
+```
+
+5. Create New Monitoring Location
+```
+POST /api/monitoring-locations
+Headers:
+{
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your_jwt_token"
+}
+
+Request Body:
+{
+    "site_id": 1,
+    "kadawala_gps_north": 237845.123,
+    "kadawala_gps_east": 176234.567,
+    "owners_name": "Kamal Silva",
+    "address": "45 Temple Road, Kapugala",
+    "telephone_number": "+94772345678",
+    "email_address": "kamal.silva@email.com",
+    "location_description": "Two story house located 200m from blast site"
+}
+
+// For bulk creation
+POST /api/monitoring-locations/bulk
+Request Body:
+{
+    "locations": [
+        {
+            "site_id": 1,
+            "kadawala_gps_north": 237845.123,
+            "kadawala_gps_east": 176234.567,
+            "owners_name": "Kamal Silva",
+            "address": "45 Temple Road, Kapugala",
+            "telephone_number": "+94772345678",
+            "email_address": "kamal.silva@email.com",
+            "location_description": "Two story house located 200m from blast site"
+        },
+        {
+            "site_id": 1,
+            "kadawala_gps_north": 237855.123,
+            "kadawala_gps_east": 176244.567,
+            "owners_name": "Nimal Perera",
+            "address": "50 Temple Road, Kapugala",
+            "telephone_number": "+94773456789",
+            "email_address": "nimal.perera@email.com",
+            "location_description": "Single story house located 250m from blast site"
+        }
+    ]
+}
+```
+
+Expected Responses:
+
+Successful Response Format (200/201):
+```json
+{
+    "success": true,
+    "message": "Resource created successfully",
+    "data": {
+        // Created resource details
+    }
+}
+```
+
+Error Response Format (400/401/403/404/500):
+```json
+{
+    "success": false,
+    "message": "Error message describing what went wrong",
+    "errors": [
+        // Detailed error information if available
+    ]
+}
+```
+
+Important Notes:
+1. Replace `your_jwt_token` with actual JWT token from login
+2. All GPS coordinates are in Kadawala coordinate system
+3. File uploads should be done using form-data
+4. Dates should be in YYYY-MM-DD format
+5. Times should be in HH:mm:ss format
+
+Would you like me to:
+1. Provide example responses for each endpoint?
+2. Add validation rules for specific fields?
+3. Include more example scenarios?
+4. Add query parameter examples?

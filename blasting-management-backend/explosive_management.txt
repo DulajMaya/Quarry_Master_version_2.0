@@ -1,0 +1,447 @@
+here new entity created and try to modify login and the role base authuntication
+
+// ADMIN ROLE
+{
+    Role: "Admin",
+    Claims: [
+        "ManageUsers",
+        "ManageRoles",
+        "ViewAllSites",
+        "ManageSites",
+        "ViewAllReports",
+        "ManageConfiguration"
+    ],
+    Policies: {
+        FullAccess: true
+    }
+}
+
+// SITE ENGINEER ROLE
+{
+    Role: "SiteEngineer",
+    Claims: [
+        "ViewAssignedSite",
+        "ManageQuotaRequests",
+        "ManageStoreInventory",
+        "ManageIssuance",
+        "ViewSiteReports"
+    ],
+    Policies: {
+        SiteAccess: "AssignedSiteOnly",
+        DataAccess: [
+            {
+                Resource: "MiningSite",
+                Condition: "MiningSiteID = UserSiteID"
+            },
+            {
+                Resource: "ExplosiveStore",
+                Condition: "MiningSiteID = UserSiteID"
+            },
+            {
+                Resource: "StoreInventory",
+                Condition: "StoreID in UserSiteStores"
+            },
+            {
+                Resource: "ExplosivePermit",
+                Condition: "MiningSiteID = UserSiteID"
+            },
+            {
+                Resource: "WeeklyQuota",
+                Condition: "PermitID in UserSitePermits"
+            }
+        ]
+    }
+}
+
+// EXPLOSIVE CONTROLLER ROLE
+{
+    Role: "ExplosiveController",
+    Claims: [
+        "ViewAssignedDistrict",
+        "ManagePermits",
+        "ApproveQuotas",
+        "ViewControllerReports"
+    ],
+    Policies: {
+        DistrictAccess: "AssignedDistrictOnly",
+        DataAccess: [
+            {
+                Resource: "ExplosivePermit",
+                Condition: "ControllerID = UserID"
+            },
+            {
+                Resource: "WeeklyQuota",
+                Condition: "PermitID in ControllerPermits"
+            }
+        ]
+    }
+}
+
+// EXPLOSIVE DEALER ROLE
+{
+    Role: "ExplosiveDealer",
+    Claims: [
+        "ViewAssignedDealer",
+        "ManagePurchases",
+        "ViewDealerReports"
+    ],
+    Policies: {
+        DealerAccess: "AssignedDealerOnly",
+        DataAccess: [
+            {
+                Resource: "Purchase",
+                Condition: "DealerID = UserDealerID"
+            },
+            {
+                Resource: "WeeklyQuota",
+                Operation: "Read"
+            }
+        ]
+    }
+}
+
+expected APIs
+
+// Permit APIs
+POST /api/permits/create                    // Create new permit
+GET /api/permits/:permitId                  // Get permit details
+GET /api/permits/mining-site/:siteId        // Get site's permits
+GET /api/permits/active                     // Get all active permits
+PUT /api/permits/:permitId/status           // Update permit status
+GET /api/permits/:permitId/remaining        // Get remaining quantities
+
+// Permit Allowed Explosive APIs
+POST /api/permits/:permitId/allowed         // Add allowed explosives
+GET /api/permits/:permitId/allowed          // Get allowed quantities
+PUT /api/permits/:permitId/allowed/:typeId  // Update allowed quantity
+
+// Quota Request APIs
+POST /api/quotas/request                    // Create quota request
+GET /api/quotas/:quotaId                    // Get quota details
+GET /api/quotas/permit/:permitId            // Get permit's quotas
+PUT /api/quotas/:quotaId/status            // Update quota status
+GET /api/quotas/pending                     // Get pending quotas
+GET /api/quotas/mining-site/:siteId        // Get site's quotas
+
+// Quota Items APIs
+POST /api/quotas/:quotaId/items            // Add quota items
+PUT /api/quotas/:quotaId/items/:itemId     // Update quota item
+GET /api/quotas/:quotaId/items             // Get quota items
+
+// Purchase APIs
+POST /api/purchases/create                  // Create purchase
+GET /api/purchases/:purchaseId             // Get purchase details
+PUT /api/purchases/:purchaseId/status      // Update purchase status
+GET /api/purchases/dealer/:dealerId        // Get dealer's purchases
+GET /api/purchases/store/:storeId          // Get store's purchases
+GET /api/purchases/quota/:quotaId          // Get quota's purchases
+
+// Purchase Items APIs
+POST /api/purchases/:purchaseId/items      // Add purchase items
+GET /api/purchases/:purchaseId/items       // Get purchase items
+
+
+// Store Inventory APIs
+GET /api/stores/:storeId/inventory         // Get store inventory
+PUT /api/stores/:storeId/inventory/update  // Update inventory
+GET /api/stores/:storeId/low-stock         // Get low stock items
+GET /api/stores/:storeId/history           // Get inventory history
+
+// Threshold APIs
+POST /api/stores/:storeId/thresholds       // Set thresholds
+PUT /api/stores/:storeId/thresholds/:id    // Update threshold
+GET /api/stores/:storeId/thresholds        // Get thresholds
+
+
+// Issuance APIs
+POST /api/issuance/create                  // Create issuance
+GET /api/issuance/:issuanceId             // Get issuance details
+PUT /api/issuance/:issuanceId/status      // Update issuance status
+GET /api/issuance/store/:storeId          // Get store's issuances
+POST /api/issuance/:issuanceId/return     // Record returns
+GET /api/issuance/active                  // Get active issuances
+
+// Issuance Items APIs
+POST /api/issuance/:issuanceId/items      // Add issuance items
+PUT /api/issuance/:issuanceId/items/:id   // Update issuance item
+GET /api/issuance/:issuanceId/items       // Get issuance items
+
+// Notification APIs
+POST /api/notifications/send               // Send notification
+GET /api/notifications/history             // Get notification history
+GET /api/notifications/store/:storeId      // Get store notifications
+PUT /api/notifications/settings            // Update notification settings
+
+
+// Batch Operations APIs
+POST /api/batch/inventory-update           // Batch inventory updates
+POST /api/batch/issuance-return           // Batch returns processing
+
+// Analytics APIs
+GET /api/analytics/usage-patterns         // Usage pattern analysis
+GET /api/analytics/stock-predictions      // Stock prediction
+GET /api/analytics/dealer-performance     // Dealer performance
+GET /api/analytics/site-consumption       // Site consumption patterns
+
+// Audit APIs
+GET /api/audit/inventory/:storeId         // Inventory audit trail
+GET /api/audit/permits/:permitId          // Permit usage audit
+GET /api/audit/transactions/:siteId       // Transaction audit
+
+// Dashboard APIs
+GET /api/dashboard/overview/:siteId       // Site dashboard data
+GET /api/dashboard/alerts                 // Active alerts
+GET /api/dashboard/expiring-permits       // Soon expiring permits
+
+// Document APIs
+POST /api/documents/upload                // Upload documents
+GET /api/documents/:documentId            // Get document
+PUT /api/documents/:documentId            // Update document
+
+// Validation APIs
+POST /api/validate/quota-request          // Validate quota request
+POST /api/validate/purchase-request       // Validate purchase request
+POST /api/validate/issuance-request      // Validate issuance request
+
+// Export APIs
+GET /api/export/reports/:reportId         // Export reports
+GET /api/export/data/:entityType         // Export entity data
+
+
+works flows
+
+1.1 New Permit Creation:
+- ExplosivePermit (Create new permit record)
+- PermitAllowedExplosive (Set allowed quantities for each type)
+Entities: ExplosivePermit -> PermitAllowedExplosive -> ExplosiveType
+
+1.2 Check Permit Status/Remaining Quantities:
+- ExplosivePermit (Check validity)
+- PermitAllowedExplosive (Check remaining quantities)
+Entities: ExplosivePermit -> PermitAllowedExplosive
+
+2.1 Request Quota:
+- Check PermitAllowedExplosive for remaining quantities
+- Create WeeklyQuota
+- Add QuotaItems
+Entities: PermitAllowedExplosive -> WeeklyQuota -> QuotaItems
+
+2.2 Quota Approval:
+- ExplosiveController approves/rejects WeeklyQuota
+- Update QuotaItems with approved quantities
+Entities: WeeklyQuota -> QuotaItems -> ExplosiveController
+
+
+3.1 New Purchase:
+- Create Purchase record with approved WeeklyQuota
+- Add PurchaseItems
+- Update PermitAllowedExplosive (reduce remaining quantities)
+- Update StoreInventory (increase quantities)
+Entities: WeeklyQuota -> Purchase -> PurchaseItems -> StoreInventory -> PermitAllowedExplosive
+
+3.2 Purchase Verification:
+- Dealer verifies WeeklyQuota
+- Updates Purchase status
+Entities: ExplosiveDealer -> Purchase -> WeeklyQuota
+
+4.1 View Current Stock:
+- Check StoreInventory for current quantities
+Entities: ExplosiveStore -> StoreInventory -> ExplosiveType
+
+4.2 Stock Threshold Management:
+- Set/Update StoreThreshold values
+- Monitor low stock situations
+Entities: StoreThreshold -> StoreInventory
+
+5.1 Issue Explosives:
+- Create ExplosiveIssuance record
+- Add IssuanceItems
+- Update StoreInventory (reduce quantities)
+Entities: ExplosiveIssuance -> IssuanceItems -> StoreInventory
+
+5.2 Return Unused Explosives:
+- Update IssuanceItems (record used and returned quantities)
+- Update ExplosiveIssuance status
+- Update StoreInventory (increase quantities with returns)
+Entities: ExplosiveIssuance -> IssuanceItems -> StoreInventory
+
+6.1 Stock Level Check:
+- Compare StoreInventory against StoreThreshold
+- Generate notification if below threshold
+Entities: StoreInventory -> StoreThreshold
+
+6.2 Send Notifications:
+- Create NotificationLog
+- Send emails to site engineer and last dealer
+Entities: NotificationLog -> ExplosiveStore -> ExplosiveDealer
+
+
+7.1 Permit Usage Reports:
+Entities: ExplosivePermit -> PermitAllowedExplosive -> WeeklyQuota -> Purchase
+
+7.2 Stock Reports:
+Entities: StoreInventory -> ExplosiveIssuance -> IssuanceItems
+
+7.3 Purchase History:
+Entities: Purchase -> PurchaseItems -> ExplosiveDealer
+
+7.4 Issuance/Usage Reports:
+Entities: ExplosiveIssuance -> IssuanceItems
+
+7.5 Low Stock Alert History:
+Entities: NotificationLog -> StoreThreshold
+
+8.1 Check Available Stock:
+Entities: StoreInventory
+
+8.2 Track Daily Usage:
+Entities: ExplosiveIssuance -> IssuanceItems
+
+8.3 Monitor Returns:
+Entities: ExplosiveIssuance -> IssuanceItems -> StoreInventory
+
+9.1 Track All Transactions:
+- Purchase history
+- Issuance history
+- Return history
+- Stock updates
+Entities: All entities involved in transactions
+
+
+E:.
+|   .env
+|   app.js
+|   createAdmin.js
+|   package-lock.json
+|   package.json
+|   server.js
+|   
++---config
+|       db.config.js
+|       
++---controllers
+|       auth.controller.js
+|       user.controller.js
+|       mining-license.controller.js
+|       site-engineer.controller.js          
+|       explosive-controller.controller.js    
+|       explosive-dealer.controller.js        
+|       explosive-permit.controller.js        // Explosive permit management
+|       weekly-quota.controller.js           // Weekly quota requests/approvals
+|       explosive-store.controller.js        // Store management
+|       store-inventory.controller.js        // Inventory tracking
+|       purchase.controller.js               // Purchase management
+|       issuance.controller.js              // Explosive issuance
+|       notification.controller.js           // Low stock notifications
+|       
++---middleware
+|       auth.middleware.js                   
+|       role.middleware.js                   
+|       upload.js
+|       access-control.middleware.js         // Site/Store access control
+|       quota-validation.middleware.js       // Validate quota requests
+|       permit-validation.middleware.js      // Validate permit operations
+|       
++---models
+|       index.js                            
+|       role.model.js                       
+|       user.model.js                       
+|       mining-license.model.js
+|       site-engineer.model.js              
+|       explosive-controller.model.js        
+|       explosive-dealer.model.js           
+|       explosive-permit.model.js            // Permit details
+|       permit-allowed-explosive.model.js    // Permitted quantities
+|       weekly-quota.model.js               // Weekly quota requests
+|       quota-items.model.js                // Quota details
+|       explosive-store.model.js            // Store information
+|       store-inventory.model.js            // Current stock
+|       store-threshold.model.js            // Low stock thresholds
+|       purchase.model.js                   // Purchase records
+|       purchase-items.model.js             // Purchase details
+|       explosive-issuance.model.js         // Issuance records
+|       issuance-items.model.js             // Issuance details
+|       notification-log.model.js           // Alert history
+|       
++---routes
+|       auth.routes.js                      
+|       user.routes.js
+|       mining-license.routes.js
+|       site-engineer.routes.js             
+|       explosive-controller.routes.js       
+|       explosive-dealer.routes.js          
+|       explosive-permit.routes.js          // Permit operations
+|       weekly-quota.routes.js              // Quota management
+|       store.routes.js                     // Store operations
+|       inventory.routes.js                 // Inventory management
+|       purchase.routes.js                  // Purchase operations
+|       issuance.routes.js                  // Issuance management
+|       notification.routes.js              // Alert management
+|       
++---services
+|       auth.service.js                     
+|       user.service.js
+|       mining-license.service.js
+|       site-engineer.service.js            
+|       explosive-controller.service.js      
+|       explosive-dealer.service.js         
+|       explosive-permit.service.js         // Permit business logic
+|       weekly-quota.service.js             // Quota business logic
+|       store.service.js                    // Store operations
+|       inventory.service.js                // Stock management
+|       purchase.service.js                 // Purchase operations
+|       issuance.service.js                // Issuance operations
+|       notification.service.js             // Alert handling
+|       id-generator.service.js             // ID generation for all entities
+|       
++---utils
+|       response.js
+|       validateInput.js                    
+|       id-patterns.js                      
+|       role-permissions.js                 
+|       inventory-calculator.js             // Stock calculations
+|       quota-calculator.js                 // Quota calculations
+|       notification-template.js            // Email templates
+|       
+\---uploads
+    |---licenses
+    |---permits                            // Store permit documents
+    |---quotas                            // Store quota documents
+    |---receipts                          // Store purchase receipts
+
+
+    The next steps would be implementing the core business entities in this order:
+
+ExplosiveType Implementation
+typescriptCopy- explosive-type.model.js
+- explosive-type.service.js
+- explosive-type.controller.js
+- explosive-type.routes.js
+This is fundamental as other entities reference explosive types.
+ExplosiveStore Setup
+typescriptCopy- explosive-store.model.js
+- explosive-store.service.js
+- explosive-store.controller.js
+- explosive-store.routes.js
+Essential for inventory management.
+ExplosivePermit System
+typescriptCopy- explosive-permit.model.js
+- permit-allowed-explosive.model.js
+- explosive-permit.service.js
+- explosive-permit.controller.js
+- explosive-permit.routes.js
+Required for quota management.
+WeeklyQuota Management
+typescriptCopy- weekly-quota.model.js
+- quota-items.model.js
+- weekly-quota.service.js
+- weekly-quota.controller.js
+- weekly-quota.routes.js
+For managing explosive requests and approvals.
+Purchase System
+typescriptCopy- purchase.model.js
+- purchase-items.model.js
+- purchase.service.js
+- purchase.controller.js
+- purchase.routes.js
+

@@ -1,0 +1,154 @@
+const { Sequelize } = require('sequelize');
+const sequelize = require('../config/db.config');
+
+// Import models
+const User = require('./user.model');
+const Role = require('./role.model');
+const SiteEngineer = require('./site-engineer.model');
+const ExplosiveController = require('./explosive-controller.model');
+const ExplosiveDealer = require('./explosive-dealer.model');
+const ExplosiveType = require('./explosive-type.model');
+const ExplosiveStore = require('./explosive-store.model');
+const StoreInventory = require('./store-inventory.model');
+const ExplosivePermit = require('./explosive-permit.model');
+const PermitAllowedExplosive = require('./permit-allowed-explosive.model');
+const WeeklyQuota = require('./weekly-quota.model');
+const QuotaItems = require('./quota-items.model');
+const Purchase = require('./purchase.model');
+const PurchaseItems = require('./purchase-items.model');
+const ExplosiveIssuance = require('./explosive-issuance.model');
+const IssuanceItems = require('./issuance-items.model');
+const InventoryMovement = require('./inventory-movement.model');
+
+// User and Role relationships
+User.belongsTo(Role, { foreignKey: 'role_id' });
+Role.hasMany(User, { foreignKey: 'role_id' });
+
+// Site Engineer relationships
+User.hasOne(SiteEngineer, {
+    foreignKey: 'EngineerID',
+    sourceKey: 'reference_id',
+    constraints: false,
+    scope: {
+        reference_type: 'SITE_ENGINEER'
+    }
+});
+SiteEngineer.belongsTo(User, {
+    foreignKey: 'EngineerID',
+    targetKey: 'reference_id'
+});
+
+// Explosive Controller relationships
+User.hasOne(ExplosiveController, {
+    foreignKey: 'ControllerID',
+    sourceKey: 'reference_id',
+    constraints: false,
+    scope: {
+        reference_type: 'EXPLOSIVE_CONTROLLER'
+    }
+});
+ExplosiveController.belongsTo(User, {
+    foreignKey: 'ControllerID',
+    targetKey: 'reference_id'
+});
+
+// Explosive Dealer relationships
+User.hasOne(ExplosiveDealer, {
+    foreignKey: 'DealerID',
+    sourceKey: 'reference_id',
+    constraints: false,
+    scope: {
+        reference_type: 'EXPLOSIVE_DEALER'
+    }
+});
+ExplosiveDealer.belongsTo(User, {
+    foreignKey: 'DealerID',
+    targetKey: 'reference_id'
+});
+
+// Store relationships
+ExplosiveStore.belongsTo(SiteEngineer, { foreignKey: 'MiningSiteID' });
+SiteEngineer.hasOne(ExplosiveStore, { foreignKey: 'MiningSiteID' });
+
+// Inventory relationships
+ExplosiveStore.hasMany(StoreInventory, { foreignKey: 'StoreID' });
+StoreInventory.belongsTo(ExplosiveStore, { foreignKey: 'StoreID' });
+
+StoreInventory.belongsTo(ExplosiveType, { foreignKey: 'ExplosiveTypeID' });
+ExplosiveType.hasMany(StoreInventory, { foreignKey: 'ExplosiveTypeID' });
+
+// Inventory Movement relationships
+StoreInventory.hasMany(InventoryMovement, { foreignKey: 'InventoryID' });
+InventoryMovement.belongsTo(StoreInventory, { foreignKey: 'InventoryID' });
+
+InventoryMovement.belongsTo(User, { 
+    foreignKey: 'CreatedBy',
+    as: 'Creator'
+});
+
+// Permit relationships
+ExplosivePermit.belongsTo(SiteEngineer, { foreignKey: 'MiningSiteID' });
+ExplosivePermit.belongsTo(ExplosiveController, { foreignKey: 'ControllerID' });
+
+ExplosivePermit.hasMany(PermitAllowedExplosive, { foreignKey: 'PermitID' });
+PermitAllowedExplosive.belongsTo(ExplosivePermit, { foreignKey: 'PermitID' });
+
+PermitAllowedExplosive.belongsTo(ExplosiveType, { foreignKey: 'ExplosiveTypeID' });
+ExplosiveType.hasMany(PermitAllowedExplosive, { foreignKey: 'ExplosiveTypeID' });
+
+// Quota relationships
+WeeklyQuota.belongsTo(ExplosivePermit, { foreignKey: 'PermitID' });
+ExplosivePermit.hasMany(WeeklyQuota, { foreignKey: 'PermitID' });
+
+WeeklyQuota.hasMany(QuotaItems, { foreignKey: 'QuotaID' });
+QuotaItems.belongsTo(WeeklyQuota, { foreignKey: 'QuotaID' });
+
+QuotaItems.belongsTo(ExplosiveType, { foreignKey: 'ExplosiveTypeID' });
+ExplosiveType.hasMany(QuotaItems, { foreignKey: 'ExplosiveTypeID' });
+
+// Purchase relationships
+Purchase.belongsTo(WeeklyQuota, { foreignKey: 'QuotaID' });
+Purchase.belongsTo(ExplosiveDealer, { foreignKey: 'DealerID' });
+Purchase.belongsTo(ExplosiveStore, { foreignKey: 'StoreID' });
+
+Purchase.hasMany(PurchaseItems, { foreignKey: 'PurchaseID' });
+PurchaseItems.belongsTo(Purchase, { foreignKey: 'PurchaseID' });
+
+PurchaseItems.belongsTo(ExplosiveType, { foreignKey: 'ExplosiveTypeID' });
+ExplosiveType.hasMany(PurchaseItems, { foreignKey: 'ExplosiveTypeID' });
+
+// Issuance relationships
+ExplosiveIssuance.belongsTo(ExplosiveStore, { foreignKey: 'StoreID' });
+ExplosiveStore.hasMany(ExplosiveIssuance, { foreignKey: 'StoreID' });
+
+ExplosiveIssuance.hasMany(IssuanceItems, { foreignKey: 'IssuanceID' });
+IssuanceItems.belongsTo(ExplosiveIssuance, { foreignKey: 'IssuanceID' });
+
+IssuanceItems.belongsTo(ExplosiveType, { foreignKey: 'ExplosiveTypeID' });
+ExplosiveType.hasMany(IssuanceItems, { foreignKey: 'ExplosiveTypeID' });
+
+ExplosiveIssuance.belongsTo(User, {
+    foreignKey: 'IssuedBy',
+    as: 'Issuer'
+});
+
+// Export models
+module.exports = {
+    User,
+    Role,
+    SiteEngineer,
+    ExplosiveController,
+    ExplosiveDealer,
+    ExplosiveType,
+    ExplosiveStore,
+    StoreInventory,
+    InventoryMovement,
+    ExplosivePermit,
+    PermitAllowedExplosive,
+    WeeklyQuota,
+    QuotaItems,
+    Purchase,
+    PurchaseItems,
+    ExplosiveIssuance,
+    IssuanceItems
+};

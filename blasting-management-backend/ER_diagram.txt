@@ -1,0 +1,536 @@
+erDiagram
+    USER {
+        int id PK
+        string username
+        string password
+        string email
+        boolean status
+        int role_id FK
+        string reference_id
+        string reference_type
+        date last_login
+        int login_attempts
+        date locked_until
+        int created_by
+        date created_at
+        date updated_at
+    }
+
+    ROLE {
+        int id PK
+        string name
+        string description
+        boolean status
+        date created_at
+    }
+
+    SITE_ENGINEER {
+        string EngineerID PK
+        int MiningSiteID FK
+        string Name
+        string NIC
+        text Address
+        string ContactNumber
+        string Email
+        string Status
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    EXPLOSIVE_CONTROLLER {
+        string ControllerID PK
+        string Name
+        string NIC
+        text Address
+        string District
+        string ContactNumber
+        string Email
+        string Status
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    EXPLOSIVE_DEALER {
+        string DealerID PK
+        string Name
+        string NIC
+        text Address
+        string District
+        string ContactNumber
+        string Email
+        string LicenseNumber
+        string Status
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    MINING_SITE {
+        int site_id PK
+        int license_id FK
+        string site_name
+        text site_address
+        string site_district
+        string site_mining_engineer
+        decimal site_kadawala_gps_north
+        decimal site_kadawala_gps_east
+        decimal site_wgs_north
+        decimal site_wgs_east
+        boolean is_active
+        date created_at
+        date updated_at
+    }
+
+    MINING_LICENSE {
+        int id PK
+        string license_number
+        date issue_date
+        date end_date
+        string district
+        string license_photo_url
+        int max_hole_per_blast
+        int max_blasts_per_day
+        decimal max_depth_of_hole
+        decimal max_spacing
+        decimal max_burden
+        decimal max_watergel_per_hole
+        decimal max_anfo_per_hole
+        boolean third_party_monitoring_required
+        string status
+        date created_at
+        date updated_at
+    }
+
+    MONITORING_LOCATION {
+        int monitoring_location_id PK
+        int site_id FK
+        decimal kadawala_gps_north
+        decimal kadawala_gps_east
+        decimal wgs_north
+        decimal wgs_east
+        string owners_name
+        text address
+        string telephone_number
+        string email_address
+        text location_description
+        boolean is_active
+        date created_at
+        date updated_at
+    }
+
+    TEST_BLAST_DETAILS {
+        int test_blast_details_id PK
+        int site_id FK
+        int license_id FK
+        date blast_date
+        int number_of_blasts
+        boolean is_approved
+        text approval_comments
+        date created_at
+        date updated_at
+    }
+
+    TEST_BLAST {
+        int test_blast_id PK
+        int test_blast_details_id FK
+        int gsmb_officer_id FK
+        decimal kadawala_gps_north
+        decimal kadawala_gps_east
+        decimal wgs_north
+        decimal wgs_east
+        time time_fired
+        int number_of_holes
+        int number_of_rows
+        text holes_sketch_url
+        date created_at
+        date updated_at
+    }
+
+    TEST_BLAST_HOLE {
+        int test_blast_hole_id PK
+        int test_blast_id FK
+        decimal water_gel_use
+        decimal anfo_use
+        int ed_delay_number
+        decimal diameter
+        decimal depth
+        decimal bench_height
+        decimal stemming_height
+        date created_at
+        date updated_at
+    }
+
+    TEST_BLAST_MONITORING {
+        int test_blast_monitoring_id PK
+        int test_blast_id FK
+        int monitoring_location_id FK
+        decimal ground_vibration_value
+        decimal air_blast_over_pressure_value
+        date measured_at
+        text remarks
+        date created_at
+        date updated_at
+    }
+
+    GSMB_OFFICER {
+        int gsmb_officer_id PK
+        string name
+        string telephone_number
+        string email_address
+        boolean is_active
+        date created_at
+        date updated_at
+    }
+
+    EXPLOSIVE_TYPE {
+        string ExplosiveTypeID PK
+        string TypeName
+        text Description
+        string UnitOfMeasurement
+        string Status
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    PERMIT_ALLOWED_EXPLOSIVE {
+        string AllowedID PK
+        string PermitID FK
+        string ExplosiveTypeID FK
+        decimal AllowedQuantity
+        decimal RemainingQuantity
+        string Unit
+        date LastUpdated
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    QUOTA_ITEMS {
+        string QuotaItemID PK
+        string QuotaID FK
+        string ExplosiveTypeID FK
+        decimal RequestedQuantity
+        decimal ApprovedQuantity
+        decimal UsedQuantity
+        string Unit
+        text Remarks
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    PURCHASE_ITEMS {
+        string PurchaseItemID PK
+        string PurchaseID FK
+        string ExplosiveTypeID FK
+        decimal Quantity
+        decimal UnitPrice
+        decimal TotalPrice
+        string BatchNumber
+        date ManufactureDate
+        date ExpiryDate
+        decimal ReceivedQuantity
+        text Remarks
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    STORE_INVENTORY {
+        string InventoryID PK
+        string StoreID FK
+        string ExplosiveTypeID FK
+        decimal CurrentQuantity
+        date LastUpdated
+        string BatchNumber
+        date ExpiryDate
+        decimal MinimumLevel
+        decimal MaximumLevel
+        string Status
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    ISSUANCE_ITEMS {
+        string IssuanceItemID PK 
+        string ExplosiveTypeID FK
+        decimal Quantity
+        decimal UnitPrice
+        decimal TotalPrice
+        string BatchNumber
+        date ManufactureDate
+        date ExpiryDate
+        decimal ReceivedQuantity
+        text Remarks
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    EXPLOSIVE_STORE {
+        string StoreID PK
+        int MiningSiteID FK
+        string StoreName
+        string LicenseNumber
+        date LicenseExpiryDate
+        string ContactPerson
+        string ContactNumber
+        string Location
+        decimal Capacity
+        string Status
+        boolean EmailNotificationStatus
+        date LastInspectionDate
+        date NextInspectionDate
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    INVENTORY_MOVEMENT {
+        string MovementID PK
+        string InventoryID FK
+        string MovementType
+        decimal Quantity
+        string ReferenceType
+        string ReferenceID
+        decimal PreviousQuantity
+        decimal NewQuantity
+        string BatchNumber
+        text Remarks
+        int CreatedBy
+        date CreatedAt
+    }
+
+    EXPLOSIVE_PERMIT {
+        string PermitID PK
+        string MiningSiteID FK
+        string LicenseID FK
+        string ControllerID FK
+        string PermitNumber
+        date IssueDate
+        date ExpiryDate
+        text Purpose
+        string Status
+        string PermitPhotoURL
+        int ValidityPeriod
+        date LastUsageDate
+        text Remarks
+        date ApprovalDate
+        int ApprovedBy
+        text RejectionReason
+        int CreatedBy
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    PERMIT_HISTORY {
+        string HistoryID PK
+        string PermitID FK
+        string ChangeType
+        string PreviousStatus
+        string NewStatus
+        json Changes
+        int ChangedBy
+        date ChangeDate
+        text Remarks
+        date CreatedAt
+    }
+
+    PERMIT_USAGE {
+        string UsageID PK
+        string PermitID FK
+        string QuotaID
+        string ExplosiveTypeID FK
+        decimal UsedQuantity
+        decimal PreviousRemaining
+        decimal NewRemaining
+        date UsageDate
+        int RecordedBy
+        date CreatedAt
+    }
+
+    WEEKLY_QUOTA {
+        string QuotaID PK
+        string PermitID FK
+        date RequestDate
+        date PlannedUsageDate
+        date ApprovalDate
+        string Status
+        string QuotaSealPhotoURL
+        text Purpose
+        string BlastingLocation
+        time BlastingTime
+        text SafetyMeasures
+        string ApprovedBy
+        text RejectionReason
+        int ValidityPeriod
+        date ExpiryDate
+        int CreatedBy
+        date LastUpdated
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    QUOTA_HISTORY {
+        string HistoryID PK
+        string QuotaID FK
+        string ChangeType
+        string PreviousStatus
+        string NewStatus
+        json Changes
+        int ChangedBy
+        text Remarks
+        date CreatedAt
+    }
+
+    QUOTA_USAGE {
+        string UsageID PK
+        string QuotaID FK
+        date UsageDate
+        text BlastingReport
+        json SafetyChecklist
+        string WeatherConditions
+        string SupervisorName
+        string Status
+        int RecordedBy
+        date CreatedAt
+    }
+
+    STORE_THRESHOLD {
+        string ThresholdID PK
+        string StoreID FK
+        string ExplosiveTypeID FK
+        decimal MinimumQuantity
+        decimal CriticalQuantity
+        decimal MaximumQuantity
+        int AlertPercentage
+        string NotificationFrequency
+        boolean EmailNotification
+        date LastNotificationDate
+        string Status
+        int LastUpdatedBy
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    THRESHOLD_HISTORY {
+        string HistoryID PK
+        string ThresholdID FK
+        string ChangeType
+        decimal PreviousMinimum
+        decimal NewMinimum
+        decimal PreviousCritical
+        decimal NewCritical
+        decimal PreviousMaximum
+        decimal NewMaximum
+        int ChangedBy
+        text Remarks
+        date CreatedAt
+    }
+
+    THRESHOLD_ALERT {
+        string AlertID PK
+        string ThresholdID FK
+        string AlertType
+        decimal CurrentQuantity
+        decimal ThresholdValue
+        boolean NotificationSent
+        date NotificationDate
+        string Status
+        date ResolvedDate
+        text Remarks
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    PURCHASE {
+        string PurchaseID PK
+        string QuotaID FK
+        string DealerID FK
+        string StoreID FK
+        date PurchaseDate
+        string Status
+        decimal TotalAmount
+        string ReceiptNumber
+        string ReceiptPhotoURL
+        string PaymentMethod
+        string PaymentStatus
+        string PaymentReference
+        date DealerConfirmationDate
+        date DeliveryDate
+        text RejectionReason
+        text Notes
+        int CreatedBy
+        date CreatedAt
+        date UpdatedAt
+    }
+
+    PURCHASE_HISTORY {
+        string HistoryID PK
+        string PurchaseID FK
+        string ChangeType
+        string PreviousStatus
+        string NewStatus
+        json Changes
+        int ChangedBy
+        date ChangeDate
+        text Remarks
+        date CreatedAt
+    }
+
+    PURCHASE_DOCUMENT {
+        string DocumentID PK
+        string PurchaseID FK
+        string DocumentType
+        string DocumentURL
+        int UploadedBy
+        date UploadDate
+        text Description
+        date CreatedAt
+    }
+
+    USER_FUNCTION {
+        USER ||--o{ ROLE : has
+        USER }o--o{ SITE_ENGINEER : "is a"
+        USER }o--o{ EXPLOSIVE_CONTROLLER : "is a" 
+        USER }o--o{ EXPLOSIVE_DEALER : "is a"
+
+        MINING_SITE ||--o{ MINING_LICENSE : "belongs to"
+        MINING_SITE }o--o{ TEST_BLAST_DETAILS : "has many"
+        MINING_SITE }o--o{ MONITORING_LOCATION : "has many"
+        MINING_SITE }o--o{ EXPLOSIVE_STORE : "has one"
+
+        TEST_BLAST_DETAILS ||--o{ TEST_BLAST : "has many"
+        TEST_BLAST ||--o{ TEST_BLAST_HOLE : "has many"
+        TEST_BLAST ||--o{ TEST_BLAST_MONITORING : "has many"
+        MONITORING_LOCATION }o--o{ TEST_BLAST_MONITORING : "has many"
+        TEST_BLAST }o--o{ GSMB_OFFICER : "belongs to"
+
+        EXPLOSIVE_TYPE ||--o{ PERMIT_ALLOWED_EXPLOSIVE : "has many"
+        EXPLOSIVE_TYPE ||--o{ QUOTA_ITEMS : "has many" 
+        EXPLOSIVE_TYPE ||--o{ PURCHASE_ITEMS : "has many"
+        EXPLOSIVE_TYPE ||--o{ STORE_INVENTORY : "has many"
+        EXPLOSIVE_TYPE ||--o{ ISSUANCE_ITEMS : "has many"
+
+        EXPLOSIVE_STORE }o--o{ MINING_SITE : "belongs to"
+        EXPLOSIVE_STORE }o--o{ STORE_INVENTORY : "has many"
+
+        STORE_INVENTORY ||--o{ INVENTORY_MOVEMENT : "has many"
+        STORE_INVENTORY }o--o{ EXPLOSIVE_TYPE : "belongs to"
+        STORE_INVENTORY }o--o{ EXPLOSIVE_STORE : "belongs to"
+        INVENTORY_MOVEMENT }o--o{ USER : "created by"
+
+        EXPLOSIVE_PERMIT ||--o{ PERMIT_ALLOWED_EXPLOSIVE : "has many"
+        EXPLOSIVE_PERMIT ||--o{ PERMIT_HISTORY : "has many"
+        EXPLOSIVE_PERMIT ||--o{ PERMIT_USAGE : "has many"
+
+        WEEKLY_QUOTA ||--o{ QUOTA_ITEMS : "has many"
+        WEEKLY_QUOTA ||--o{ QUOTA_HISTORY : "has many"
+        WEEKLY_QUOTA ||--o{ QUOTA_USAGE : "has many"
+        WEEKLY_QUOTA }o--o{ EXPLOSIVE_PERMIT : "belongs to"
+
+        PURCHASE }o--o{ WEEKLY_QUOTA : "belongs to"
+        PURCHASE }o--o{ EXPLOSIVE_DEALER : "belongs to"
+        PURCHASE }o--o{ EXPLOSIVE_STORE : "belongs to"
+        PURCHASE_ITEMS }o--o{ PURCHASE : "belongs to"
+        PURCHASE_ITEMS }o--o{ EXPLOSIVE_TYPE : "belongs to"
+
+        STORE_THRESHOLD ||--o{ THRESHOLD_HISTORY : "has many"
+        STORE_THRESHOLD ||--o{ THRESHOLD_ALERT : "has many"
+        STORE_THRESHOLD }o--o{ EXPLOSIVE_STORE : "belongs to"
+        STORE_THRESHOLD }o--o{ EXPLOSIVE_TYPE : "belongs to"
+    }

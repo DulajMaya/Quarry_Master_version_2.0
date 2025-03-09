@@ -1,0 +1,13 @@
+ the admin of the system can do
+- give approve to registered user and assign role then after user can use system with given role permission
+- see all crud operation the mining license , add mining license, remove mining license, updated mining license 
+- see all crud operation on  explosive permit 
+- see all crud operation on mining sites
+- ones select mining site details should display
+      - license
+      - explosive permit
+       - operation company
+	- explosive store details
+- all crud operation GSMB officers, if one gsmb officer details
+- all crud operation on test blast details
+-

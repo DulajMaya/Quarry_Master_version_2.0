@@ -1,0 +1,47 @@
+<h2>Welcome to Quarry Master</h2>
+<p>Dear {{userName}},</p>
+
+<div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px;">
+    <p>Your account has been successfully {{action}}.</p>
+    <p><strong>Account Details:</strong></p>
+    <ul style="list-style: none; padding: 0;">
+        <li>Username: {{username}}</li>
+        <li>Email: {{email}}</li>
+        <li>Role: {{role}}</li>
+        {{#if site}}
+        <li>Mining Site: {{site}}</li>
+        {{/if}}
+    </ul>
+</div>
+
+{{#if pendingApproval}}
+<div style="margin-top: 20px; background-color: #fff3cd; padding: 15px; border-radius: 5px;">
+    <p><strong>Note:</strong> Your account is pending admin approval. You will receive another email once your account is approved.</p>
+</div>
+{{/if}}
+
+{{#if approved}}
+<div style="margin-top: 20px;">
+    <p><strong>Next Steps:</strong></p>
+    <ol>
+        <li>Login to your account using your credentials</li>
+        <li>Change your password on first login</li>
+        <li>Complete your profile information</li>
+        <li>Review system guidelines and procedures</li>
+    </ol>
+</div>
+
+<div style="margin-top: 20px; text-align: center;">
+    <a href="{{loginUrl}}" style="background-color: #004d99; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+        Login to Your Account
+    </a>
+</div>
+{{/if}}
+
+<div style="margin-top: 30px;">
+    <p><strong>For support:</strong></p>
+    <ul>
+        <li>Email: support@quarrymaster.com</li>
+        <li>Phone: +1234567890</li>
+    </ul>
+</div>
